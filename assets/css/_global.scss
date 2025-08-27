@@ -1,9 +1,39 @@
+:root {
+  --bg: #{$background-color};
+  --text: #{$font-color};
+  --primary: #{$primary-color};
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #111;
+    --text: #eaeaea;
+    --primary: #ffb84d;
+  }
+}
+
+*, *::before, *::after {
+  transition: color .4s ease, background-color .4s ease, border-color .4s ease, stroke .4s ease, fill .4s ease;
+}
+
+html.dark {
+  --bg: #0f0f0f;
+  --text: #e9e9e9;
+  --primary: #ffb84d;
+}
+
+html.light {
+  --bg: #ffffff;
+  --text: #222222;
+  --primary: #{$primary-color};
+}
+
 html, body {
-  font-family: $body-font;
+  font-family: #{$body-font}, monospace;
   font-size: 16px;
   line-height: 1.5;
-  background-color: $background-color;
-  color: $font-color;
+  background-color: var(--bg, #{$background-color});
+  color: var(--text, #{$font-color});
 
   @media (max-width: $large-screen) {
     font-size: 14px;
