@@ -2,6 +2,7 @@
 layout: post
 type: socratic
 title: "Seminário Socrático 017"
+luma: https://luma.com/wpfaklie
 ---
 
 ## Avisos
@@ -13,8 +14,7 @@ title: "Seminário Socrático 017"
 
 ## Agradecimentos
 
-- Agradecemos ao SENGE por ceder o espaço.
-<!-- TODO: confirmar se há patrocínio de comida/bebida (Vinteum) e divulgação (GoBTC) antes do merge. -->
+- Agradecemos ao SENGE por ceder o espaço, à [Vinteum](https://vinteum.org) pelo apoio e à [GoBTC](https://gobtc.com.br) pela organização e divulgação do evento.
 
 ## Cronograma
 
