@@ -11,7 +11,7 @@ No automated tests configured. Manual testing via local preview.
 
 ## Creating Posts
 - Create new file in `_posts/` with format: `YYYY-MM-DD-title.md`
-- Use frontmatter: `layout: post`, `type: socratic|whitepaper`, `title: "Title"`, `meetup: url`
+- Use frontmatter: `layout: post`, `type: socratic|whitepaper`, `title: "Title"`, `luma: url` (registration platform in transition from Meetup to Luma — use `luma`; keep `meetup` only for posts that still need the legacy link)
 - Add links in "Cronograma" section with categories like "Aquecimento", "Bitcoin L1", "Lightning and L2", "Segurança"
 - Format links as markdown: `* [Description](url)`
 - Fetch discussion topics from GitHub issues (e.g., https://github.com/poabitdevs/poabitdevs.org/issues/12)
