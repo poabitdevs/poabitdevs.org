@@ -44,9 +44,14 @@ frontmatter ficam no [`AGENTS.md`](AGENTS.md); aqui o foco é o processo.
    layout: post
    type: socratic
    title: "Seminário Socrático <NNN>"
-   meetup: <url do evento no Meetup>
+   luma: <url do evento na Luma>
    ---
    ```
+
+   Inscrições em transição do Meetup para a Luma (ver
+   [#25](https://github.com/poabitdevs/poabitdevs.org/pull/25)): use
+   `luma:` nos posts novos. `meetup:` continua funcionando nos posts
+   antigos que já o usam, mas não é mais o campo recomendado.
 
    Corpo com as seções `## Avisos`, `## Agradecimentos` e `## Cronograma`
    (uma subseção `###` por categoria, cada tópico como
@@ -60,7 +65,7 @@ frontmatter ficam no [`AGENTS.md`](AGENTS.md); aqui o foco é o processo.
    exemplo.
 
 7. **Merge.** Só depois que a pauta estiver fechada **e** o link real do
-   evento no Meetup estiver preenchido no frontmatter — nunca mergear com
+   evento na Luma estiver preenchido no frontmatter — nunca mergear com
    um link placeholder. O merge fecha a issue automaticamente e publica o
    post (Jekyll gera a página a partir de `_posts/`; `events.html` lista
    qualquer post com `type: socratic` sem trabalho manual adicional).
