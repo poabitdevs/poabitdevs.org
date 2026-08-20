@@ -28,7 +28,7 @@ luma: https://luma.com/wpfaklie
 ### Bitcoin L1
 
 * ["Tripwire": desabilitar opcodes de curva elíptica contra ameaça quântica](https://groups.google.com/g/bitcoindev/c/aWYtPLVPZ3U){:target="_blank"} - Pieter Wuille propõe mecanismos para desabilitar, via soft-fork, opcodes de curva elíptica em novos tipos de output resistentes a computação quântica
-* [Bitcoin Core mescla novo rate-limiting global de transações (PR #34628)](https://github.com/bitcoin/bitcoin/pull/34628){:target="_blank"} - Substitui rate-limiting por-peer por um sistema global de filas, mitigando um vetor de negação de serviço por CPU causado por reordenação repetida de transações
+* [Bitcoin Core mescla novo rate-limiting global de transações (PR #34628)](https://github.com/bitcoin/bitcoin/pull/34628){:target="_blank"} - Substitui rate-limiting per-peer por um sistema global de filas, mitigando um vetor de negação de serviço por CPU causado por reordenação repetida de transações
 * [BIP draft: "Segregated Data" — tirar dado arbitrário do OP_RETURN](https://delvingbitcoin.org/t/bip-draft-segregated-data-a-prunable-script-isolated-block-region-for-data-carriage/2641){:target="_blank"} - Soft-fork propõe região de bloco prunável dedicada a dados arbitrários; críticos apontam falta de incentivo de retenção obrigatória
 * [libsecp256k1 v0.8.0](https://github.com/bitcoin-core/secp256k1/releases/tag/v0.8.0){:target="_blank"} - Nova release traz módulo para silent payments (BIP352) e SHA-256 otimizado por hardware, ~11% de ganho na verificação de assinatura
 
