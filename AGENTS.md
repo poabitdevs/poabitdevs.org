@@ -20,7 +20,7 @@ No automated tests configured. Manual testing via local preview.
 
 ### Jekyll/Markdown
 - Posts in `_posts/` use format: `YYYY-MM-DD-title.md`
-- Frontmatter: `layout: post`, `type: socratic|whitepaper`, `title: "Title"`, `meetup: url`
+- Frontmatter: `layout: post`, `type: socratic|whitepaper`, `title: "Title"`, `luma: url` (registration platform in transition from Meetup to Luma — use `luma`; keep `meetup` only for posts that still need the legacy link)
 - Use standard Markdown syntax
 
 ### SCSS
