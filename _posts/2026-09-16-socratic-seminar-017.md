@@ -9,12 +9,12 @@ luma: https://luma.com/wpfaklie
 
 - Respeite a privacidade dos participantes.
 - Os meetups nunca são gravados. Queremos todos a vontade para participar e discutir os assuntos programados, de forma anônima se assim o desejarem.
-- Entrem no grupo do Whatsapp "[BitdevsPOA](https://chat.whatsapp.com/I9OKdMexmXVBQMHEPb2Uyp)" para ajudar na curadoria dos encontros!
-- [Curso de Bitcoin do Edil](https://www.youtube.com/watch?v=gCgdCgyHFqw&list=PLfdR3_dt2rbexb-ohbaLLzAuNAp7Ypt8u)
+- Entrem no grupo do Whatsapp "[BitdevsPOA](https://chat.whatsapp.com/I9OKdMexmXVBQMHEPb2Uyp){:target="_blank"}" para receber novidades sobre o grupo e ser notificado dos próximos encontros!
+- [Curso de Bitcoin do Edil](https://www.youtube.com/watch?v=gCgdCgyHFqw&list=PLfdR3_dt2rbexb-ohbaLLzAuNAp7Ypt8u){:target="_blank"}
 
 ## Agradecimentos
 
-- Agradecemos ao SENGE por ceder o espaço, à [Vinteum](https://vinteum.org) pelo apoio e à [GoBTC](https://gobtc.com.br) pela organização e divulgação do evento.
+- Agradecemos ao SENGE pela locação do espaço, à [Vinteum](https://vinteum.org){:target="_blank"} pelo apoio e à [GoBTC](https://gobtc.com.br){:target="_blank"} pela organização e divulgação do evento.
 
 ## Cronograma
 
