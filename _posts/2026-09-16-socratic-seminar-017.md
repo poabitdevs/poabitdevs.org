@@ -2,6 +2,7 @@
 layout: post
 type: socratic
 title: "Seminário Socrático 017"
+meetup: https://www.meetup.com/porto-alegre-bitdevs/events/316198858/
 luma: https://luma.com/wpfaklie
 ---
 
