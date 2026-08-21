@@ -132,8 +132,9 @@ qualquer um dos dois caminhos).
   qualquer preview funcionar corretamente.
 - O workflow de Actions fica mais complexo do que uma integração nativa de
   provedor externo: precisa tratar PR aberto/sincronizado, fechado com
-  merge (com checagem de SHA-base) e fechado sem merge, além de operações
-  de escrita diretamente na branch `gh-pages`.
+  merge e fechado sem merge, além de operações de escrita diretamente na
+  branch `gh-pages` e serialização de deploys de produção via
+  `concurrency`.
 - Previews não são suportados para PRs de forks nesta etapa (ver "Fora de
   escopo" acima) — só contribuições via branch do próprio repositório.
 - Os previews continuam publicamente acessíveis (GitHub Pages não oferece
@@ -146,8 +147,9 @@ qualquer um dos dois caminhos).
   `index.html`, `_includes/footer.html`) para usar `site.baseurl`/
   `relative_url` em vez de `site.github.url`/caminhos absolutos.
 - Implementar o workflow de Actions: build + publicação do preview com
-  `baseurl`, comentário automático no PR, rebuild + publicação de produção
-  no merge (com checagem de SHA-base), limpeza no fechamento sem merge.
+  `baseurl` a partir de `refs/pull/<N>/merge`, comentário automático no
+  PR, rebuild + publicação de produção no merge (com `concurrency` para
+  serializar deploys), limpeza no fechamento sem merge.
 - Habilitar "Require branches to be up to date before merging" na
   `master`.
 - Migrar a fonte do GitHub Pages para a branch `gh-pages` (com
