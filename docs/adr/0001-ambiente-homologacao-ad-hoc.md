@@ -23,9 +23,21 @@ Adotar um ambiente de homologação ad hoc por Pull Request: um workflow de
 GitHub Actions builda o site Jekyll a cada PR aberto contra `master` e
 publica o resultado em um subcaminho da própria branch `gh-pages` (por
 exemplo, `pr-preview/pr-<número>/`), comentando o link de preview
-automaticamente no PR. Esse é o padrão implementado por ferramentas como o
+automaticamente no PR, e remove esse subcaminho quando o PR é fechado
+(mergeado ou não). Esse é o padrão implementado por ferramentas como o
 [rossjrw/pr-preview-action](https://github.com/rossjrw/pr-preview-action),
 que reaproveitamos em vez de escrever a lógica de deploy do zero.
+
+**Escopo explicitamente de fora desta decisão:** como a produção hoje usa o
+build "legacy" do GitHub Pages (reconstruído pelo próprio GitHub a partir da
+`master`, com o ambiente/gems dele — não o `Gemfile`/`Gemfile.lock` do
+projeto), o artefato homologado no PR e o artefato publicado em produção
+continuam sendo dois builds independentes após esta mudança. Fazer a
+produção publicar exatamente o mesmo artefato binário homologado no PR (sem
+rebuild adicional) exige trocar a fonte do GitHub Pages para um deploy
+baseado em branch estática, o que é uma mudança de maior risco no pipeline
+de produção — tratada separadamente, com mais calma, na issue
+[#32](https://github.com/poabitdevs/poabitdevs.org/issues/32).
 
 Alternativas consideradas:
 
@@ -58,10 +70,17 @@ Alternativas consideradas:
 - Os previews ficam publicamente acessíveis (GitHub Pages não oferece PRs
   privados/protegidos por padrão), então nenhum conteúdo sensível deve
   passar por esse fluxo antes de estar pronto para publicação.
-- É preciso configurar a limpeza dos subcaminhos de preview quando o PR é
-  fechado, para o `gh-pages` não crescer indefinidamente.
+- O artefato homologado no PR e o artefato publicado em produção continuam
+  sendo builds independentes por enquanto (ver "Escopo" acima e
+  [#32](https://github.com/poabitdevs/poabitdevs.org/issues/32)) — esta
+  decisão não elimina, por si só, o risco de divergência de ambiente entre
+  hml e prd, só cria a etapa de homologação.
 
 ## Próximos passos
 
-Implementação do workflow de Actions e do comentário automático de link no
-PR ficam para as próximas etapas desta issue ([#29](https://github.com/poabitdevs/poabitdevs.org/issues/29)), fora do escopo deste ADR.
+Implementação do workflow de Actions (build + deploy do preview) e do
+comentário automático de link no PR, incluindo a limpeza do subcaminho de
+preview no fechamento do PR, ficam para as próximas etapas desta issue
+([#29](https://github.com/poabitdevs/poabitdevs.org/issues/29)), fora do
+escopo deste ADR. A promoção do artefato homologado para produção sem
+rebuild fica para a issue [#32](https://github.com/poabitdevs/poabitdevs.org/issues/32).
