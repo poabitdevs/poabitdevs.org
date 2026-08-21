@@ -42,12 +42,12 @@ Actions, usando a branch `gh-pages` como única fonte do GitHub Pages:
   nada do lado dele.
 - **Pré-requisito nos templates:** os templates do site hoje usam
   `site.github.url` (`_includes/header.html`, `_includes/head.html`) e
-  caminhos absolutos de raiz (`/events.html`, `/feed.xml`, `/favicon.ico`
-  em `index.html`/`_includes/footer.html`), nenhum usa `site.baseurl`. Um
-  preview publicado num subcaminho com esses templates navegaria de volta
-  para produção. Antes do workflow de preview funcionar, os templates
-  precisam trocar essas referências por `{{ site.baseurl }}`/o filtro
-  `relative_url` do Jekyll.
+  caminhos absolutos de raiz — `/events.html` em `index.html`, `/feed.xml`
+  em `_includes/footer.html`, `/favicon.ico` em `_includes/head.html` —,
+  nenhum usa `site.baseurl`. Um preview publicado num subcaminho com esses
+  templates navegaria de volta para produção. Antes do workflow de preview
+  funcionar, os templates precisam trocar essas referências por
+  `{{ site.baseurl }}`/o filtro `relative_url` do Jekyll.
 - **No PR** (aberto, sincronizado ou reaberto, só de branches do próprio
   repositório — ver "Fora de escopo" abaixo): uma Action builda o Jekyll
   com `bundle exec jekyll build --baseurl /pr-preview/pr-<número>` e
