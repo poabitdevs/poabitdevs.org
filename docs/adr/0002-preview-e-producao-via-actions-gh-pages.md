@@ -49,12 +49,16 @@ Actions, usando a branch `gh-pages` como única fonte do GitHub Pages:
   funcionar, os templates precisam trocar essas referências por
   `{{ site.baseurl }}`/o filtro `relative_url` do Jekyll.
 - **No PR** (aberto, sincronizado ou reaberto, só de branches do próprio
-  repositório — ver "Fora de escopo" abaixo): uma Action builda o Jekyll
-  com `bundle exec jekyll build --baseurl /pr-preview/pr-<número>` e
-  publica o `_site` resultante em `gh-pages:pr-preview/pr-<número>/`,
-  registrando o SHA buildado (por exemplo, num arquivo `.build-sha` dentro
-  do próprio diretório do preview) e comentando o link automaticamente no
-  PR.
+  repositório — ver "Fora de escopo" abaixo): uma Action builda o Jekyll a
+  partir de `refs/pull/<número>/merge` (o merge sintético do PR com o
+  estado atual de `master`, mantido pelo próprio GitHub) com
+  `bundle exec jekyll build --baseurl /pr-preview/pr-<número>`, publica o
+  `_site` resultante em `gh-pages:pr-preview/pr-<número>/` e comenta o
+  link automaticamente no PR. Buildar a partir desse ref, em vez do HEAD
+  isolado da branch do PR, já deixa a árvore de fontes do preview
+  equivalente à que a produção vai usar — se `master` avançou entre um
+  build e outro, o próximo push ao PR (ou o requisito de "up to date" no
+  merge, abaixo) atualiza esse ref antes do merge acontecer de fato.
 - **No fechamento do PR:**
   - Se mergeado: em vez de mover o diretório do preview como se fosse o
     artefato final, a Action builda a produção **de novo**, com
@@ -64,17 +68,22 @@ Actions, usando a branch `gh-pages` como única fonte do GitHub Pages:
     Jekyll grava o `baseurl` no HTML no momento do build, então o mesmo
     artefato do preview não pode ser servido correto em dois caminhos
     diferentes (subcaminho e raiz). A garantia que sobra é mais modesta,
-    mas ainda real: mesmo commit, mesmo toolchain/`Gemfile.lock`, dois
-    builds determinísticos — diferindo só nos caminhos dependentes de
-    `baseurl` —, não dois pipelines de build diferentes como no ADR 0001.
-  - Antes de publicar, a Action confere se o SHA-base do PR no momento do
-    build ainda é o HEAD atual de `gh-pages`'s fonte (`master`); se
-    `master` avançou entre o último build do preview e o merge (outro PR
-    foi mergeado nesse meio-tempo), o build de produção usa o commit de
-    merge atual — que já contém as duas mudanças — então esse cenário fica
-    coberto pelo próprio rebuild, não por uma promoção "cega" do artefato
-    antigo. Como defesa em profundidade, a branch `master` passa a exigir
-    "Require branches to be up to date before merging".
+    mas ainda real: **árvore de fontes equivalente** (o commit de merge
+    real, criado no momento do merge, tem SHA distinto do que foi
+    homologado no preview por definição — não é "o mesmo commit") e mesmo
+    toolchain/`Gemfile.lock`, dois builds determinísticos diferindo só nos
+    caminhos dependentes de `baseurl` — não dois pipelines de build
+    diferentes como no ADR 0001.
+  - A branch `master` passa a exigir "Require branches to be up to date
+    before merging", para o commit de merge nunca ficar muito distante do
+    que foi homologado no preview.
+  - Dois merges próximos no tempo disparam dois jobs de publicação de
+    produção em paralelo, que podem terminar fora de ordem — o job do
+    merge mais antigo sobrescrevendo o resultado do mais novo se terminar
+    depois. Os jobs de publicação de produção usam `concurrency` do
+    GitHub Actions (fila, sem `cancel-in-progress`) para rodar em série,
+    garantindo que o último a publicar seja sempre o do merge mais
+    recente.
   - Se fechado sem merge: o subcaminho `pr-preview/pr-<número>/` é
     simplesmente removido.
 
@@ -102,10 +111,11 @@ qualquer um dos dois caminhos).
 
 - Não depende de nenhum GitHub App externo nem de aprovação de Owner da
   organização — só de permissões de admin do repositório, já disponíveis.
-- O artefato publicado em produção sai do mesmo commit, mesmo toolchain e
-  mesmo `Gemfile.lock` que o artefato homologado no PR — reduz bem a
-  divergência de ambiente que motivou a issue #32, mesmo sem ser um
-  artefato literalmente idêntico byte a byte (ver "Decisão").
+- O artefato publicado em produção sai de uma árvore de fontes equivalente,
+  mesmo toolchain e mesmo `Gemfile.lock` que o artefato homologado no PR —
+  reduz bem a divergência de ambiente que motivou a issue #32, mesmo sem
+  ser um artefato literalmente idêntico byte a byte nem vir do mesmo commit
+  (ver "Decisão").
 - Continua usando só a infraestrutura já em uso (GitHub Actions/Pages), sem
   provedor externo novo.
 
