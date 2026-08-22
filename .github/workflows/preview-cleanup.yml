@@ -1,0 +1,69 @@
+name: Preview Cleanup
+
+# pull_request_target (não pull_request): o Actions usa a versão deste
+# arquivo que está em master, mesmo que o PR fechado tenha alterado este
+# workflow — e o checkout abaixo, sem `ref:`, também baixa master, nunca o
+# código do PR. Só o número do PR vem do evento; nenhum código do PR é
+# executado. Ver ADR 0002, emenda.
+#
+# Grupo de concurrency próprio (gh-pages-cleanup-<n>), separado do
+# gh-pages-preview-<n> usado por preview-publish.yml: se compartilhassem o
+# mesmo grupo, uma sequência de publicações (de builds concluindo em
+# sequência) poderia deslocar/cancelar a limpeza enquanto ela ainda está
+# na fila, deixando o preview de um PR fechado publicado para sempre.
+# preview-publish.yml também remove o preview quando descobre que o PR
+# está fechado, como reforço independente deste job.
+#
+# Como os dois grupos são separados, os jobs não se serializam entre si —
+# por isso este job reverifica o estado do PR (via API, não pelo payload
+# do evento, que pode estar obsoleto) antes de apagar: se o PR já tiver
+# sido reaberto e republicado por preview-publish.yml, apagar aqui
+# derrubaria um preview atual e válido. Ver ADR 0002, emenda.
+
+on:
+  pull_request_target:
+    types: [closed]
+
+permissions:
+  contents: write
+  pull-requests: read
+  statuses: write
+
+jobs:
+  cleanup-preview:
+    name: cleanup-preview
+    runs-on: ubuntu-latest
+    concurrency:
+      group: gh-pages-cleanup-${{ github.event.pull_request.number }}
+    env:
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      PR_NUMBER: ${{ github.event.pull_request.number }}
+      HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Verificar se o PR segue fechado
+        id: recheck
+        run: echo "result=$(.github/scripts/pr-state.sh "$PR_NUMBER")" >> "$GITHUB_OUTPUT"
+
+      - name: Remover preview
+        if: steps.recheck.outputs.result == 'closed'
+        run: |
+          .github/scripts/publish-gh-pages.sh \
+            "pr-preview/pr-${PR_NUMBER}" \
+            "--delete" \
+            "Limpeza do preview do PR #${PR_NUMBER}"
+
+      # Sem isto, o status "preview/publish" de uma publicação anterior
+      # ficaria "success" mesmo com o preview já apagado — se o PR for
+      # reaberto sem novo commit, o branch protection veria o check ainda
+      # verde. `if: always()` (dentro do ramo "closed"): mesmo se a
+      # remoção acima falhar, não faz sentido deixar um "success" para um
+      # estado que não sabemos qual é.
+      - name: Invalidar status de preview no head do PR
+        if: always() && steps.recheck.outputs.result == 'closed'
+        run: |
+          gh api "repos/${{ github.repository }}/statuses/${HEAD_SHA}" \
+            -f state=error \
+            -f context="preview/publish" \
+            -f description="Preview removido (PR fechado) — reabra ou envie um commit para gerar um novo."

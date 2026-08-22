@@ -1,0 +1,164 @@
+name: Preview Publish
+
+# Disparado por workflow_run (não por pull_request): o Actions usa sempre a
+# versão deste arquivo que está em master, nunca a de um PR — mesmo que o
+# PR tenha alterado este workflow ou o script de publicação, essa versão
+# alterada nunca roda com o token de escrita. Ver ADR 0002, emenda.
+#
+# O status "preview/publish" (usado depois como check obrigatório na
+# proteção de branch) só pode ser criado aqui, nunca em preview-build.yml:
+# aquele job roda código do PR com permissões mínimas de propósito — se
+# tivesse `statuses: write`, um PR malicioso poderia forjar o próprio
+# "sucesso" desse check sem nunca ter publicado nada.
+#
+# preview-cleanup.yml tem seu próprio grupo de concurrency (para nunca ser
+# deslocado pelo tráfego deste workflow), o que significa que os dois
+# podem rodar ao mesmo tempo sem se serializar entre si. Por isso este job
+# reverifica o estado do PR logo depois de escrever (não só antes): a
+# checagem inicial e a escrita não são atômicas entre si, e o PR pode
+# fechar nesse meio-tempo. Ver ADR 0002, emenda.
+
+on:
+  workflow_run:
+    workflows: ["Preview Build"]
+    types: [completed]
+
+permissions:
+  contents: write
+  pull-requests: write
+  actions: read
+  statuses: write
+
+jobs:
+  publish:
+    name: publish
+    if: >-
+      github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.head_repository.full_name == github.repository
+    runs-on: ubuntu-latest
+    concurrency:
+      group: gh-pages-preview-${{ github.event.workflow_run.pull_requests[0].number }}
+    env:
+      PR_NUMBER: ${{ github.event.workflow_run.pull_requests[0].number }}
+      HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Marcar preview/publish como pendente
+        run: |
+          gh api "repos/${{ github.repository }}/statuses/${HEAD_SHA}" \
+            -f state=pending \
+            -f context="preview/publish" \
+            -f description="Publicando preview..." \
+            -f target_url="https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+
+      - name: Verificar se o PR segue aberto e no head atual
+        id: guard
+        run: echo "result=$(.github/scripts/pr-state.sh "$PR_NUMBER" "$HEAD_SHA")" >> "$GITHUB_OUTPUT"
+
+      - name: Baixar build do preview
+        if: steps.guard.outputs.result == 'open'
+        uses: actions/download-artifact@v4
+        with:
+          name: preview-site
+          path: _site
+          run-id: ${{ github.event.workflow_run.id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Publicar preview
+        if: steps.guard.outputs.result == 'open'
+        run: |
+          .github/scripts/publish-gh-pages.sh \
+            "pr-preview/pr-${PR_NUMBER}" \
+            "_site" \
+            "Preview do PR #${PR_NUMBER} (${HEAD_SHA})"
+
+      # A checagem inicial e a escrita acima não são atômicas entre si — o
+      # PR pode ter fechado nesse meio-tempo. Reverificar agora encurta
+      # bastante essa janela (de "todo o download+publish" para só o
+      # instante entre este passo e o anterior).
+      - name: Reverificar após publicar
+        id: recheck
+        if: steps.guard.outputs.result == 'open'
+        run: echo "result=$(.github/scripts/pr-state.sh "$PR_NUMBER")" >> "$GITHUB_OUTPUT"
+
+      # Autocorreção: cobre tanto o PR já estar fechado antes deste job
+      # começar (guard) quanto ele fechar durante a publicação (recheck) —
+      # reforço independente de preview-cleanup.yml, que pode estar rodando
+      # em paralelo (grupos de concurrency separados) e perder a mesma
+      # corrida.
+      - name: Remover preview (PR fechado antes ou durante a publicação)
+        if: steps.guard.outputs.result == 'closed' || steps.recheck.outputs.result == 'closed'
+        run: |
+          .github/scripts/publish-gh-pages.sh \
+            "pr-preview/pr-${PR_NUMBER}" \
+            "--delete" \
+            "Autocorreção: PR #${PR_NUMBER} fechado antes ou durante a publicação"
+
+      - name: Comentar link do preview no PR
+        if: steps.guard.outputs.result == 'open' && steps.recheck.outputs.result == 'open'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const { owner, repo } = context.repo;
+            const prNumber = Number(process.env.PR_NUMBER);
+            const marker = '<!-- gh-pages-preview-comment -->';
+            const url = `https://${owner}.github.io/${repo}/pr-preview/pr-${prNumber}/`;
+            const body = `${marker}\n🔍 Preview publicado: ${url}\n\nAtualizado a partir do commit ${process.env.HEAD_SHA}.`;
+
+            const comments = await github.paginate(github.rest.issues.listComments, {
+              owner,
+              repo,
+              issue_number: prNumber,
+            });
+            const existing = comments.find(
+              (c) => c.user?.login === 'github-actions[bot]' && c.body && c.body.includes(marker)
+            );
+
+            if (existing) {
+              await github.rest.issues.updateComment({ owner, repo, comment_id: existing.id, body });
+            } else {
+              await github.rest.issues.createComment({ owner, repo, issue_number: prNumber, body });
+            }
+
+      # "obsoleto"/"fechado" marca error, não success: essa execução não
+      # deixou um preview atual publicado, e um success aqui poderia
+      # sobrescrever de volta uma invalidação que preview-cleanup.yml já
+      # tenha feito no mesmo head_sha (ver ADR 0002, emenda).
+      - name: Marcar preview/publish como obsoleto
+        if: >-
+          success() &&
+          (steps.guard.outputs.result != 'open' || steps.recheck.outputs.result == 'closed')
+        run: |
+          if [ "${{ steps.guard.outputs.result }}" = "closed" ] || [ "${{ steps.recheck.outputs.result }}" = "closed" ]; then
+            desc="PR fechado — preview removido (autocorreção)."
+          else
+            desc="Superado por um commit mais novo — preview não publicado."
+          fi
+          gh api "repos/${{ github.repository }}/statuses/${HEAD_SHA}" \
+            -f state=error \
+            -f context="preview/publish" \
+            -f description="$desc" \
+            -f target_url="https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+
+      - name: Marcar preview/publish como sucesso
+        if: >-
+          success() &&
+          steps.guard.outputs.result == 'open' &&
+          steps.recheck.outputs.result == 'open'
+        run: |
+          gh api "repos/${{ github.repository }}/statuses/${HEAD_SHA}" \
+            -f state=success \
+            -f context="preview/publish" \
+            -f description="Preview publicado." \
+            -f target_url="https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+
+      - name: Marcar preview/publish como falha
+        if: failure()
+        run: |
+          gh api "repos/${{ github.repository }}/statuses/${HEAD_SHA}" \
+            -f state=failure \
+            -f context="preview/publish" \
+            -f description="Falha ao publicar o preview." \
+            -f target_url="https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"

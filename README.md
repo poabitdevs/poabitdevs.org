@@ -35,6 +35,23 @@ All site configurations are either contained in `_config.yml` or
 `_data/settings.yml`. Some data is duplicated between the two due to the way
 Jekyll injects variables, so be sure to update both.
 
+## Deploying & Previews
+
+The site is built and published by GitHub Actions to the `gh-pages` branch
+(GitHub Pages source) — do not edit `gh-pages` directly, it's regenerated on
+every push.
+
+* Every pull request from a branch of this repository (forks aren't
+  supported yet) gets an automatic preview published at
+  `/pr-preview/pr-<number>/`, with a link posted as a PR comment and
+  updated on every push.
+* Merging to `master` rebuilds production from the current `master` HEAD
+  and publishes it to the root of `gh-pages`.
+* Closing a PR (merged or not) removes its preview.
+
+See [ADR 0002](docs/adr/0002-preview-e-producao-via-actions-gh-pages.md) for
+the full design and rationale.
+
 ## Attributions
 
 Thanks to [LeNPaul](https://github.com/LeNPaul/jekyll-starter-kit) for the

@@ -1,0 +1,41 @@
+name: Production
+
+on:
+  push:
+    branches: [master]
+
+concurrency:
+  group: gh-pages-production
+
+permissions:
+  contents: write
+
+jobs:
+  publish:
+    name: publish-production
+    runs-on: ubuntu-latest
+    steps:
+      # ref explícito (não github.sha): garante que o build usa o HEAD
+      # atual de master no momento em que a Action roda, não o commit que
+      # disparou o evento — relevante quando `concurrency` coalesce merges
+      # próximos (ver docs/adr/0002-preview-e-producao-via-actions-gh-pages.md).
+      - uses: actions/checkout@v4
+        with:
+          ref: master
+
+      - uses: ruby/setup-ruby@v1
+        with:
+          bundler-cache: true
+
+      - name: Build
+        run: bundle exec jekyll build
+
+      - name: Publicar produção
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          .github/scripts/publish-gh-pages.sh \
+            "" \
+            "_site" \
+            "Build de produção a partir de master@$(git rev-parse HEAD)" \
+            "CNAME"
