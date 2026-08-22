@@ -15,6 +15,10 @@ _site/
 ehthumbs.db
 vendor
 
+# Gerado no momento do build (local ou CI) para identificar a versão
+# publicada no rodapé do site — nunca committed.
+_data/build.yml
+
 # To prevent accidental push of translations from
 # Transifex.
 .tx/translations/

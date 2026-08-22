@@ -52,6 +52,24 @@ every push.
 See [ADR 0002](docs/adr/0002-preview-e-producao-via-actions-gh-pages.md) for
 the full design and rationale.
 
+> **Transitional state:** the GitHub Pages source is still the legacy build
+> from `master` — switching it to `gh-pages` needs repository admin access,
+> which isn't available yet (see issue #29). Until that switch happens, the
+> live site is republished by GitHub's own legacy build whenever `master`
+> changes, while this repo's `production.yml` also builds and publishes to
+> `gh-pages` in parallel, with no effect on the live site yet.
+
+### Identifying which build is live
+
+Every build (local, preview, or production) writes its commit SHA, UTC
+timestamp and pipeline name to `_data/build.yml` (generated, not committed —
+see `Makefile` and the workflows), rendered in the footer of every page. It's
+hidden by default; append `?debug` to any page's URL to reveal it, or check
+the HTML comment right above it in the page source either way. A legacy
+Pages build never generates that file, so its footer always reads
+"desconhecido" — a quick way to tell which pipeline actually published what
+you're looking at.
+
 ## Attributions
 
 Thanks to [LeNPaul](https://github.com/LeNPaul/jekyll-starter-kit) for the
