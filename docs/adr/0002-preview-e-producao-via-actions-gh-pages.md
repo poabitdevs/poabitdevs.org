@@ -75,15 +75,24 @@ Actions, usando a branch `gh-pages` como única fonte do GitHub Pages:
     caminhos dependentes de `baseurl` — não dois pipelines de build
     diferentes como no ADR 0001.
   - A branch `master` passa a exigir "Require branches to be up to date
-    before merging", para o commit de merge nunca ficar muito distante do
-    que foi homologado no preview.
-  - Dois merges próximos no tempo disparam dois jobs de publicação de
-    produção em paralelo, que podem terminar fora de ordem — o job do
-    merge mais antigo sobrescrevendo o resultado do mais novo se terminar
-    depois. Os jobs de publicação de produção usam `concurrency` do
-    GitHub Actions (fila, sem `cancel-in-progress`) para rodar em série,
-    garantindo que o último a publicar seja sempre o do merge mais
-    recente.
+    before merging" **e** o status check do workflow de preview como
+    obrigatório para o merge. A primeira regra sozinha não bastaria: ela
+    garante que a árvore está fresca, mas não impede o merge enquanto o
+    preview daquele estado específico ainda está rodando ou falhou —
+    furando a premissa de que nada vai para produção sem ter sido
+    homologado antes. As duas regras juntas fecham essa lacuna.
+  - Todos os jobs que escrevem em `gh-pages` (build de preview, limpeza no
+    fechamento sem merge, e publicação de produção) compartilham um único
+    grupo de `concurrency` do GitHub Actions, rodando em série — não só os
+    de produção entre si, já que preview e limpeza escrevem na mesma
+    branch e também podem colidir. Isso serializa a execução, mas
+    `concurrency` não garante que a ordem de execução bata com a ordem em
+    que os merges foram disparados. Por isso, imediatamente antes de
+    escrever, o job de publicação de produção compara o SHA que está
+    prestes a publicar com o HEAD atual de `master`: se `master` já
+    avançou para um commit mais novo enquanto este job rodava, ele é
+    obsoleto e aborta sem publicar, deixando o job do merge mais recente
+    (que vai rodar em seguida, pela fila) prevalecer.
   - Se fechado sem merge: o subcaminho `pr-preview/pr-<número>/` é
     simplesmente removido.
 
@@ -132,9 +141,9 @@ qualquer um dos dois caminhos).
   qualquer preview funcionar corretamente.
 - O workflow de Actions fica mais complexo do que uma integração nativa de
   provedor externo: precisa tratar PR aberto/sincronizado, fechado com
-  merge e fechado sem merge, além de operações de escrita diretamente na
-  branch `gh-pages` e serialização de deploys de produção via
-  `concurrency`.
+  merge e fechado sem merge, além de serializar (via `concurrency`) todas
+  as operações de escrita na branch `gh-pages` — preview, limpeza e
+  publicação de produção — e checar obsolescência antes de publicar.
 - Previews não são suportados para PRs de forks nesta etapa (ver "Fora de
   escopo" acima) — só contribuições via branch do próprio repositório.
 - Os previews continuam publicamente acessíveis (GitHub Pages não oferece
@@ -148,10 +157,12 @@ qualquer um dos dois caminhos).
   `relative_url` em vez de `site.github.url`/caminhos absolutos.
 - Implementar o workflow de Actions: build + publicação do preview com
   `baseurl` a partir de `refs/pull/<N>/merge`, comentário automático no
-  PR, rebuild + publicação de produção no merge (com `concurrency` para
-  serializar deploys), limpeza no fechamento sem merge.
-- Habilitar "Require branches to be up to date before merging" na
-  `master`.
+  PR, rebuild + publicação de produção no merge (com checagem de
+  obsolescência antes de publicar), limpeza no fechamento sem merge — todos
+  compartilhando um único grupo de `concurrency` na branch `gh-pages`.
+- Habilitar "Require branches to be up to date before merging" **e**
+  marcar o status check do workflow de preview como obrigatório para o
+  merge, na `master`.
 - Migrar a fonte do GitHub Pages para a branch `gh-pages` (com
   `.nojekyll`).
 - Remover `netlify.toml` (já feito) e reaproveitar `.ruby-version` para
