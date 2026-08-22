@@ -4,6 +4,12 @@ name: Preview Publish
 # versão deste arquivo que está em master, nunca a de um PR — mesmo que o
 # PR tenha alterado este workflow ou o script de publicação, essa versão
 # alterada nunca roda com o token de escrita. Ver ADR 0002, emenda.
+#
+# O status "preview/publish" (usado depois como check obrigatório na
+# proteção de branch) só pode ser criado aqui, nunca em preview-build.yml:
+# aquele job roda código do PR com permissões mínimas de propósito — se
+# tivesse `statuses: write`, um PR malicioso poderia forjar o próprio
+# "sucesso" desse check sem nunca ter publicado nada.
 
 on:
   workflow_run:
@@ -14,6 +20,7 @@ permissions:
   contents: write
   pull-requests: write
   actions: read
+  statuses: write
 
 jobs:
   publish:
@@ -24,10 +31,40 @@ jobs:
     runs-on: ubuntu-latest
     concurrency:
       group: gh-pages-preview-${{ github.event.workflow_run.pull_requests[0].number }}
+    env:
+      PR_NUMBER: ${{ github.event.workflow_run.pull_requests[0].number }}
+      HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     steps:
       - uses: actions/checkout@v4
 
+      - name: Marcar preview/publish como pendente
+        run: |
+          gh api "repos/${{ github.repository }}/statuses/${HEAD_SHA}" \
+            -f state=pending \
+            -f context="preview/publish" \
+            -f description="Publicando preview..." \
+            -f target_url="https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+
+      # Entre o build terminar e este job rodar, o PR pode ter sido
+      # fechado, ou um push mais novo pode ter tornado este head_sha
+      # obsoleto (workflow_run de execuções concorrentes não garante
+      # ordem). Publicar mesmo assim recriaria um preview já limpo, ou
+      # sobrescreveria um preview mais novo com conteúdo velho.
+      - name: Verificar se o PR segue aberto e no head atual
+        id: guard
+        run: |
+          pr="$(gh api "repos/${{ github.repository }}/pulls/${PR_NUMBER}")"
+          state="$(echo "$pr" | jq -r .state)"
+          current_sha="$(echo "$pr" | jq -r .head.sha)"
+          if [ "$state" != "open" ] || [ "$current_sha" != "$HEAD_SHA" ]; then
+            echo "stale=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "stale=false" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Baixar build do preview
+        if: steps.guard.outputs.stale == 'false'
         uses: actions/download-artifact@v4
         with:
           name: preview-site
@@ -36,10 +73,7 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Publicar preview
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          PR_NUMBER: ${{ github.event.workflow_run.pull_requests[0].number }}
-          HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
+        if: steps.guard.outputs.stale == 'false'
         run: |
           .github/scripts/publish-gh-pages.sh \
             "pr-preview/pr-${PR_NUMBER}" \
@@ -47,10 +81,8 @@ jobs:
             "Preview do PR #${PR_NUMBER} (${HEAD_SHA})"
 
       - name: Comentar link do preview no PR
+        if: steps.guard.outputs.stale == 'false'
         uses: actions/github-script@v7
-        env:
-          PR_NUMBER: ${{ github.event.workflow_run.pull_requests[0].number }}
-          HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
         with:
           script: |
             const { owner, repo } = context.repo;
@@ -73,3 +105,26 @@ jobs:
             } else {
               await github.rest.issues.createComment({ owner, repo, issue_number: prNumber, body });
             }
+
+      - name: Marcar preview/publish como sucesso
+        if: success()
+        run: |
+          if [ "${{ steps.guard.outputs.stale }}" = "true" ]; then
+            desc="PR fechado ou superado por um commit mais novo — preview não publicado."
+          else
+            desc="Preview publicado."
+          fi
+          gh api "repos/${{ github.repository }}/statuses/${HEAD_SHA}" \
+            -f state=success \
+            -f context="preview/publish" \
+            -f description="$desc" \
+            -f target_url="https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+
+      - name: Marcar preview/publish como falha
+        if: failure()
+        run: |
+          gh api "repos/${{ github.repository }}/statuses/${HEAD_SHA}" \
+            -f state=failure \
+            -f context="preview/publish" \
+            -f description="Falha ao publicar o preview." \
+            -f target_url="https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
