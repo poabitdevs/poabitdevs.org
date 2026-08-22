@@ -11,13 +11,12 @@ name: Preview Publish
 # tivesse `statuses: write`, um PR malicioso poderia forjar o próprio
 # "sucesso" desse check sem nunca ter publicado nada.
 #
-# Este job também apaga o preview quando descobre que o PR foi fechado
-# (não só quando é superado por um commit mais novo): preview-cleanup.yml
-# tem seu próprio grupo de concurrency para nunca ser deslocado pelo grupo
-# gh-pages-preview-<n> usado aqui, mas se ainda assim ele for perdido por
-# algum motivo, um publish tardio que sobreviva à fila deste grupo serve de
-# reforço — ele é o único capaz de rodar depois do fechamento, já que
-# nenhum build novo dispara depois disso.
+# preview-cleanup.yml tem seu próprio grupo de concurrency (para nunca ser
+# deslocado pelo tráfego deste workflow), o que significa que os dois
+# podem rodar ao mesmo tempo sem se serializar entre si. Por isso este job
+# reverifica o estado do PR logo depois de escrever (não só antes): a
+# checagem inicial e a escrita não são atômicas entre si, e o PR pode
+# fechar nesse meio-tempo. Ver ADR 0002, emenda.
 
 on:
   workflow_run:
@@ -54,27 +53,12 @@ jobs:
             -f description="Publicando preview..." \
             -f target_url="https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
 
-      # Entre o build terminar e este job rodar, o PR pode ter sido
-      # fechado, ou um push mais novo pode ter tornado este head_sha
-      # obsoleto (workflow_run de execuções concorrentes não garante
-      # ordem). "closed" e "superseded" recebem tratamento diferente
-      # abaixo: só "closed" aciona a remoção do preview aqui.
       - name: Verificar se o PR segue aberto e no head atual
         id: guard
-        run: |
-          pr="$(gh api "repos/${{ github.repository }}/pulls/${PR_NUMBER}")"
-          state="$(echo "$pr" | jq -r .state)"
-          current_sha="$(echo "$pr" | jq -r .head.sha)"
-          if [ "$state" != "open" ]; then
-            echo "result=closed" >> "$GITHUB_OUTPUT"
-          elif [ "$current_sha" != "$HEAD_SHA" ]; then
-            echo "result=superseded" >> "$GITHUB_OUTPUT"
-          else
-            echo "result=current" >> "$GITHUB_OUTPUT"
-          fi
+        run: echo "result=$(.github/scripts/pr-state.sh "$PR_NUMBER" "$HEAD_SHA")" >> "$GITHUB_OUTPUT"
 
       - name: Baixar build do preview
-        if: steps.guard.outputs.result == 'current'
+        if: steps.guard.outputs.result == 'open'
         uses: actions/download-artifact@v4
         with:
           name: preview-site
@@ -83,15 +67,37 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Publicar preview
-        if: steps.guard.outputs.result == 'current'
+        if: steps.guard.outputs.result == 'open'
         run: |
           .github/scripts/publish-gh-pages.sh \
             "pr-preview/pr-${PR_NUMBER}" \
             "_site" \
             "Preview do PR #${PR_NUMBER} (${HEAD_SHA})"
 
+      # A checagem inicial e a escrita acima não são atômicas entre si — o
+      # PR pode ter fechado nesse meio-tempo. Reverificar agora encurta
+      # bastante essa janela (de "todo o download+publish" para só o
+      # instante entre este passo e o anterior).
+      - name: Reverificar após publicar
+        id: recheck
+        if: steps.guard.outputs.result == 'open'
+        run: echo "result=$(.github/scripts/pr-state.sh "$PR_NUMBER")" >> "$GITHUB_OUTPUT"
+
+      # Autocorreção: cobre tanto o PR já estar fechado antes deste job
+      # começar (guard) quanto ele fechar durante a publicação (recheck) —
+      # reforço independente de preview-cleanup.yml, que pode estar rodando
+      # em paralelo (grupos de concurrency separados) e perder a mesma
+      # corrida.
+      - name: Remover preview (PR fechado antes ou durante a publicação)
+        if: steps.guard.outputs.result == 'closed' || steps.recheck.outputs.result == 'closed'
+        run: |
+          .github/scripts/publish-gh-pages.sh \
+            "pr-preview/pr-${PR_NUMBER}" \
+            "--delete" \
+            "Autocorreção: PR #${PR_NUMBER} fechado antes ou durante a publicação"
+
       - name: Comentar link do preview no PR
-        if: steps.guard.outputs.result == 'current'
+        if: steps.guard.outputs.result == 'open' && steps.recheck.outputs.result == 'open'
         uses: actions/github-script@v7
         with:
           script: |
@@ -116,28 +122,17 @@ jobs:
               await github.rest.issues.createComment({ owner, repo, issue_number: prNumber, body });
             }
 
-      # Reforço: se preview-cleanup.yml não tiver rodado ainda (ou tiver
-      # sido perdido por algum motivo), este publish tardio garante a
-      # remoção mesmo assim — idempotente, não há problema se a limpeza
-      # dedicada também remover o mesmo subcaminho em paralelo.
-      - name: Remover preview (PR fechado)
-        if: steps.guard.outputs.result == 'closed'
-        run: |
-          .github/scripts/publish-gh-pages.sh \
-            "pr-preview/pr-${PR_NUMBER}" \
-            "--delete" \
-            "Limpeza de segurança do preview do PR #${PR_NUMBER} (publish tardio detectou fechamento)"
-
-      # Estado "obsoleto"/"fechado" marca error, não success: essa execução
-      # não publicou nada de atual, e um success aqui poderia sobrescrever
-      # de volta uma invalidação que preview-cleanup.yml já tenha feito no
-      # mesmo head_sha (as duas rodam em paralelo, sem ordem garantida
-      # entre si — ver ADR 0002, emenda).
+      # "obsoleto"/"fechado" marca error, não success: essa execução não
+      # deixou um preview atual publicado, e um success aqui poderia
+      # sobrescrever de volta uma invalidação que preview-cleanup.yml já
+      # tenha feito no mesmo head_sha (ver ADR 0002, emenda).
       - name: Marcar preview/publish como obsoleto
-        if: success() && steps.guard.outputs.result != 'current'
+        if: >-
+          success() &&
+          (steps.guard.outputs.result != 'open' || steps.recheck.outputs.result == 'closed')
         run: |
-          if [ "${{ steps.guard.outputs.result }}" = "closed" ]; then
-            desc="PR fechado — preview removido (limpeza de segurança)."
+          if [ "${{ steps.guard.outputs.result }}" = "closed" ] || [ "${{ steps.recheck.outputs.result }}" = "closed" ]; then
+            desc="PR fechado — preview removido (autocorreção)."
           else
             desc="Superado por um commit mais novo — preview não publicado."
           fi
@@ -148,7 +143,10 @@ jobs:
             -f target_url="https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
 
       - name: Marcar preview/publish como sucesso
-        if: success() && steps.guard.outputs.result == 'current'
+        if: >-
+          success() &&
+          steps.guard.outputs.result == 'open' &&
+          steps.recheck.outputs.result == 'open'
         run: |
           gh api "repos/${{ github.repository }}/statuses/${HEAD_SHA}" \
             -f state=success \

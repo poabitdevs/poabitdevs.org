@@ -13,6 +13,12 @@ name: Preview Cleanup
 # na fila, deixando o preview de um PR fechado publicado para sempre.
 # preview-publish.yml também remove o preview quando descobre que o PR
 # está fechado, como reforço independente deste job.
+#
+# Como os dois grupos são separados, os jobs não se serializam entre si —
+# por isso este job reverifica o estado do PR (via API, não pelo payload
+# do evento, que pode estar obsoleto) antes de apagar: se o PR já tiver
+# sido reaberto e republicado por preview-publish.yml, apagar aqui
+# derrubaria um preview atual e válido. Ver ADR 0002, emenda.
 
 on:
   pull_request_target:
@@ -30,24 +36,31 @@ jobs:
       group: gh-pages-cleanup-${{ github.event.pull_request.number }}
     env:
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      PR_NUMBER: ${{ github.event.pull_request.number }}
       HEAD_SHA: ${{ github.event.pull_request.head.sha }}
     steps:
       - uses: actions/checkout@v4
 
+      - name: Verificar se o PR segue fechado
+        id: recheck
+        run: echo "result=$(.github/scripts/pr-state.sh "$PR_NUMBER")" >> "$GITHUB_OUTPUT"
+
       - name: Remover preview
+        if: steps.recheck.outputs.result == 'closed'
         run: |
           .github/scripts/publish-gh-pages.sh \
-            "pr-preview/pr-${{ github.event.pull_request.number }}" \
+            "pr-preview/pr-${PR_NUMBER}" \
             "--delete" \
-            "Limpeza do preview do PR #${{ github.event.pull_request.number }}"
+            "Limpeza do preview do PR #${PR_NUMBER}"
 
       # Sem isto, o status "preview/publish" de uma publicação anterior
       # ficaria "success" mesmo com o preview já apagado — se o PR for
       # reaberto sem novo commit, o branch protection veria o check ainda
-      # verde. `if: always()`: mesmo se a remoção acima falhar, não faz
-      # sentido deixar um "success" para um estado que não sabemos qual é.
+      # verde. `if: always()` (dentro do ramo "closed"): mesmo se a
+      # remoção acima falhar, não faz sentido deixar um "success" para um
+      # estado que não sabemos qual é.
       - name: Invalidar status de preview no head do PR
-        if: always()
+        if: always() && steps.recheck.outputs.result == 'closed'
         run: |
           gh api "repos/${{ github.repository }}/statuses/${HEAD_SHA}" \
             -f state=error \
