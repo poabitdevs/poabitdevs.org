@@ -8,6 +8,7 @@ sass:
   sass_dir: assets/css
   style: :compressed
 
+url: https://poabitdevs.org
 baseurl: ""
 
 # Customise atom feed settings (this is where Jekyll-Feed gets configuration information)
