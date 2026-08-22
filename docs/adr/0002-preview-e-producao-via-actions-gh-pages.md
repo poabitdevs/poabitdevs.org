@@ -289,3 +289,38 @@ seção "Fora de escopo") para quando o projeto passasse a aceitar forks:
 
 `production.yml` não foi afetado: já rodava só em `push` para `master`,
 nunca com conteúdo de PR.
+
+Três achados adicionais de revisão, na mesma linha de "PR não pode se
+autoisentar da homologação", refinaram esse desenho depois de implementado:
+
+- O check que aparece no PR (`build`, de `preview-build.yml`) só confirma
+  que o Jekyll buildou, não que a publicação em `gh-pages` ou o comentário
+  deram certo — `workflow_run` não reporta status no commit do PR por
+  conta própria. `preview-publish.yml` passou a criar/atualizar um commit
+  status `preview/publish` diretamente em `workflow_run.head_sha`
+  (pendente → sucesso/erro/falha); é o check exigido pela proteção de
+  branch (ver "Próximos passos"). Só pode ser criado ali, nunca em
+  `preview-build.yml`, que roda código do PR com permissões mínimas de
+  propósito.
+- `workflow_run` de execuções concorrentes não garante ordem: uma
+  publicação atrasada de um commit antigo podia rodar depois da limpeza de
+  um PR fechado, ressuscitando um preview já apagado, ou sobrescrever um
+  preview mais novo com conteúdo velho. `preview-publish.yml` agora
+  consulta a API do PR antes de publicar e só segue se ele continuar
+  aberto e no mesmo `head.sha` que disparou a execução; caso contrário,
+  marca o status como erro (nunca sucesso) e não escreve nada — e, se o PR
+  estiver especificamente fechado (não só superado), remove o preview como
+  reforço (ver próximo ponto).
+- Limpar o preview não bastava para invalidar o status `preview/publish`
+  já publicado nesse `head.sha`; um PR reaberto sem novo commit herdaria
+  um check ainda "sucesso" com o preview já removido. `preview-cleanup.yml`
+  passou a marcar esse status como erro depois de remover o preview. E,
+  como esse job e `preview-publish.yml` compartilhavam o mesmo grupo de
+  `concurrency` (`gh-pages-preview-<n>`), uma sequência de publicações
+  concluindo em cadeia podia deslocar/cancelar a limpeza enquanto ela
+  ainda estava na fila — sem nada para rodá-la de novo, o preview de um PR
+  fechado ficaria publicado indefinidamente. `preview-cleanup.yml` passou
+  a ter grupo próprio (`gh-pages-cleanup-<n>`), nunca deslocável por
+  tráfego de publish; o reforço do ponto anterior (publish também remove o
+  preview ao detectar fechamento) cobre o caso de a limpeza dedicada ainda
+  assim ser perdida por algum outro motivo.

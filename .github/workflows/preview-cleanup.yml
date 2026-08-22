@@ -5,6 +5,14 @@ name: Preview Cleanup
 # workflow — e o checkout abaixo, sem `ref:`, também baixa master, nunca o
 # código do PR. Só o número do PR vem do evento; nenhum código do PR é
 # executado. Ver ADR 0002, emenda.
+#
+# Grupo de concurrency próprio (gh-pages-cleanup-<n>), separado do
+# gh-pages-preview-<n> usado por preview-publish.yml: se compartilhassem o
+# mesmo grupo, uma sequência de publicações (de builds concluindo em
+# sequência) poderia deslocar/cancelar a limpeza enquanto ela ainda está
+# na fila, deixando o preview de um PR fechado publicado para sempre.
+# preview-publish.yml também remove o preview quando descobre que o PR
+# está fechado, como reforço independente deste job.
 
 on:
   pull_request_target:
@@ -19,7 +27,7 @@ jobs:
     name: cleanup-preview
     runs-on: ubuntu-latest
     concurrency:
-      group: gh-pages-preview-${{ github.event.pull_request.number }}
+      group: gh-pages-cleanup-${{ github.event.pull_request.number }}
     env:
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       HEAD_SHA: ${{ github.event.pull_request.head.sha }}
