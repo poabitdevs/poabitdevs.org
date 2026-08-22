@@ -106,18 +106,27 @@ jobs:
               await github.rest.issues.createComment({ owner, repo, issue_number: prNumber, body });
             }
 
-      - name: Marcar preview/publish como sucesso
-        if: success()
+      # Estado "obsoleto" marca error, não success: essa execução não
+      # publicou nada de atual, e um success aqui poderia sobrescrever de
+      # volta uma invalidação que preview-cleanup.yml já tenha feito no
+      # mesmo head_sha (as duas rodam em paralelo, sem ordem garantida
+      # entre si — ver ADR 0002, emenda).
+      - name: Marcar preview/publish como obsoleto
+        if: success() && steps.guard.outputs.stale == 'true'
         run: |
-          if [ "${{ steps.guard.outputs.stale }}" = "true" ]; then
-            desc="PR fechado ou superado por um commit mais novo — preview não publicado."
-          else
-            desc="Preview publicado."
-          fi
+          gh api "repos/${{ github.repository }}/statuses/${HEAD_SHA}" \
+            -f state=error \
+            -f context="preview/publish" \
+            -f description="PR fechado ou superado por um commit mais novo — preview não publicado." \
+            -f target_url="https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+
+      - name: Marcar preview/publish como sucesso
+        if: success() && steps.guard.outputs.stale == 'false'
+        run: |
           gh api "repos/${{ github.repository }}/statuses/${HEAD_SHA}" \
             -f state=success \
             -f context="preview/publish" \
-            -f description="$desc" \
+            -f description="Preview publicado." \
             -f target_url="https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
 
       - name: Marcar preview/publish como falha
