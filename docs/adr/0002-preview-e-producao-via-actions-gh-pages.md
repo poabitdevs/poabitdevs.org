@@ -92,8 +92,13 @@ Actions, usando a branch `gh-pages` como única fonte do GitHub Pages:
     artefato final, a Action builda a produção **de novo**, com
     `bundle exec jekyll build` (sem `--baseurl`, contando com o
     `baseurl: ""` corrigido no `_config.yml` — ver pré-requisito acima),
-    a partir do commit de merge resultante, e publica esse resultado na
-    raiz de `gh-pages`. Isso abandona a garantia literal de "zero rebuild"
+    a partir do HEAD atual de `master` no momento em que a Action roda —
+    não do commit de merge que disparou o evento, pela mesma lógica de
+    coalescência descrita abaixo —, e publica esse resultado na raiz de
+    `gh-pages`, preservando o `pr-preview/` já publicado (a raiz não é um
+    subcaminho isolado: convive com `pr-preview/` na mesma árvore — ver
+    escrita conflict-safe abaixo). Isso abandona a garantia literal de
+    "zero rebuild"
     — necessária porque o
     Jekyll grava o `baseurl` no HTML no momento do build, então o mesmo
     artefato do preview não pode ser servido correto em dois caminhos
@@ -141,12 +146,21 @@ Actions, usando a branch `gh-pages` como única fonte do GitHub Pages:
     apagaria a atualização de um pelo outro. Por isso, todo escritor de
     `gh-pages` (preview, limpeza e produção) faz a escrita de forma
     conflict-safe: busca o HEAD atual, aplica sua mudança só no próprio
-    subcaminho (o de produção, na raiz; o de cada PR, em
-    `pr-preview/pr-<número>/`), tenta o push e, se falhar por
-    non-fast-forward, repete o ciclo (fetch, reaplica, push) até
-    conseguir — nunca força a escrita.
-  - Se fechado sem merge: o subcaminho `pr-preview/pr-<número>/` é
-    simplesmente removido.
+    subcaminho — o de cada PR, em `pr-preview/pr-<número>/`; o de
+    produção, em todo o restante da árvore da raiz, preservando intacto
+    o `pr-preview/` tal como acabou de ser buscado (sobrescrever a raiz
+    por inteiro apagaria previews abertos ou, num retry, poderia
+    ressuscitar um preview já limpo por outro escritor) —, tenta o push
+    e, se falhar por non-fast-forward, repete o ciclo (fetch, reaplica
+    preservando o `pr-preview/` mais recente, push) até conseguir —
+    nunca força a escrita.
+  - Em qualquer fechamento — com ou sem merge —, o escritor de limpeza
+    (grupo `gh-pages-preview-<número>`) remove o subcaminho
+    `pr-preview/pr-<número>/`. Sem merge, essa é a única ação; com
+    merge, ela roda em paralelo à publicação de produção (grupo
+    `gh-pages-production`), coordenada pela mesma escrita conflict-safe
+    — sem essa limpeza, o preview de todo PR mergeado ficaria publicado
+    indefinidamente.
 
 **Fora de escopo nesta decisão:** preview para PRs vindos de forks. No
 evento `pull_request`, o `GITHUB_TOKEN` de um PR de fork é somente leitura
@@ -218,7 +232,8 @@ qualquer um dos dois caminhos).
   `baseurl` a partir de `refs/pull/<N>/merge`, comentário automático no
   PR, rebuild de produção no merge (sempre a partir do HEAD atual de
   `master` no momento em que roda, não do SHA que disparou o job),
-  limpeza no fechamento sem merge — produção com grupo de `concurrency`
+  limpeza do subcaminho de preview em todo fechamento (com ou sem
+  merge) — produção com grupo de `concurrency`
   próprio (`gh-pages-production`) e preview/limpeza particionados por PR
   (`gh-pages-preview-<N>`), com escrita conflict-safe (fetch + retry no
   push) em todos os casos.
