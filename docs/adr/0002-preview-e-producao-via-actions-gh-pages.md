@@ -112,17 +112,19 @@ Actions, usando a branch `gh-pages` como única fonte do GitHub Pages:
     furando a premissa de que nada vai para produção sem ter sido
     homologado antes. As duas regras juntas fecham essa lacuna.
   - A publicação de produção usa seu **próprio** grupo de `concurrency`
-    (`gh-pages-production`), separado do grupo usado por preview/limpeza.
-    `concurrency` não é uma fila: por grupo, o GitHub Actions mantém no
-    máximo uma execução em andamento e uma pendente — uma nova execução
-    *substitui* a pendente, não entra atrás dela. Um único grupo
-    compartilhado entre produção e preview criaria um risco novo: um
-    preview de PR não relacionado poderia cancelar um deploy de produção
-    que estava pendente, e esse merge nunca seria publicado. Manter grupos
-    separados evita que atividade de preview descarte trabalho de
-    produção pendente (preview/limpeza entre si podem se coalescer sem
-    problema, já que cada nova execução reflete o estado mais atual do
-    seu próprio PR).
+    (`gh-pages-production`), separado do grupo usado por preview/limpeza,
+    que por sua vez é **particionado por número do PR**
+    (`gh-pages-preview-<número>`) — não um grupo único compartilhado entre
+    todos os PRs. `concurrency` não é uma fila: por grupo, o GitHub Actions
+    mantém no máximo uma execução em andamento e uma pendente — uma nova
+    execução *substitui* a pendente, não entra atrás dela. Isso motiva as
+    duas divisões: um grupo único entre produção e preview deixaria um
+    preview de PR não relacionado cancelar um deploy de produção pendente;
+    um grupo único de preview compartilhado entre PRs deixaria o evento de
+    um PR B cancelar o preview pendente de um PR A — que não representa o
+    estado de A — e, pior, deixaria a limpeza de A ao fechar ser cancelada
+    por atividade de B, publicando o preview de A indefinidamente mesmo
+    depois de fechado.
   - Mesmo isolado, o grupo de produção ainda pode coalescer dois merges
     muito próximos (o mais antigo, pendente, é substituído pelo mais
     novo). Por isso o job de publicação de produção não confia no SHA que
@@ -131,6 +133,18 @@ Actions, usando a branch `gh-pages` como única fonte do GitHub Pages:
     mesmo que uma execução intermediária seja descartada pela
     coalescência, a que efetivamente rodar por último publica o estado
     mais recente — nenhum merge fica de fora permanentemente.
+  - Separar os grupos evita que um cancele o outro, mas não impede que
+    produção e preview tentem escrever em `gh-pages` ao mesmo tempo — os
+    grupos só serializam disparos dentro de si mesmos, não entre si. Como
+    ambos partem do mesmo HEAD da branch, um push normal simultâneo falha
+    por non-fast-forward (perdendo o deploy sem um retry) e um force-push
+    apagaria a atualização de um pelo outro. Por isso, todo escritor de
+    `gh-pages` (preview, limpeza e produção) faz a escrita de forma
+    conflict-safe: busca o HEAD atual, aplica sua mudança só no próprio
+    subcaminho (o de produção, na raiz; o de cada PR, em
+    `pr-preview/pr-<número>/`), tenta o push e, se falhar por
+    non-fast-forward, repete o ciclo (fetch, reaplica, push) até
+    conseguir — nunca força a escrita.
   - Se fechado sem merge: o subcaminho `pr-preview/pr-<número>/` é
     simplesmente removido.
 
@@ -180,10 +194,12 @@ qualquer um dos dois caminhos).
   funcionar corretamente.
 - O workflow de Actions fica mais complexo do que uma integração nativa de
   provedor externo: precisa tratar PR aberto/sincronizado, fechado com
-  merge e fechado sem merge, usar grupos de `concurrency` separados para
-  produção e para preview/limpeza, e fazer a publicação de produção
-  sempre reconciliar com o HEAD atual de `master` (não com o SHA que
-  disparou o job) para sobreviver à coalescência de execuções.
+  merge e fechado sem merge, usar um grupo de `concurrency` próprio para
+  produção e um por PR para preview/limpeza, fazer a publicação de
+  produção sempre reconciliar com o HEAD atual de `master` (não com o SHA
+  que disparou o job), e escrever em `gh-pages` de forma conflict-safe
+  (fetch + retry no push) em todo escritor, já que grupos separados não
+  serializam a escrita entre si na mesma branch.
 - Previews não são suportados para PRs de forks nesta etapa (ver "Fora de
   escopo" acima) — só contribuições via branch do próprio repositório.
 - Os previews continuam publicamente acessíveis (GitHub Pages não oferece
@@ -202,8 +218,10 @@ qualquer um dos dois caminhos).
   `baseurl` a partir de `refs/pull/<N>/merge`, comentário automático no
   PR, rebuild de produção no merge (sempre a partir do HEAD atual de
   `master` no momento em que roda, não do SHA que disparou o job),
-  limpeza no fechamento sem merge — produção usando um grupo de
-  `concurrency` próprio, separado do grupo de preview/limpeza.
+  limpeza no fechamento sem merge — produção com grupo de `concurrency`
+  próprio (`gh-pages-production`) e preview/limpeza particionados por PR
+  (`gh-pages-preview-<N>`), com escrita conflict-safe (fetch + retry no
+  push) em todos os casos.
 - Habilitar "Require branches to be up to date before merging" **e**
   marcar o status check do workflow de preview como obrigatório para o
   merge, na `master`.
