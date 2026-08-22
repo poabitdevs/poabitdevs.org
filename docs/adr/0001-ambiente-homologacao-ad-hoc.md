@@ -1,12 +1,16 @@
 # 0001. Ambiente de homologação ad hoc por Pull Request
 
 > **Status: substituído pelo [ADR 0002](0002-preview-e-producao-via-actions-gh-pages.md).**
-> Na prática, a instalação do GitHub App do provedor externo escolhido aqui
-> (Netlify) na organização `poabitdevs` ficou bloqueada por exigir aprovação
-> de um Owner da organização, sem acesso claro/alcançável no momento — um
-> bloqueio inerente a qualquer provedor externo (Netlify, Vercel, Cloudflare
-> Pages), não específico do Netlify. O conteúdo abaixo permanece como
-> registro histórico da decisão original.
+> Na prática, a instalação da integração nativa via GitHub App do provedor
+> externo escolhido aqui (Netlify) na organização `poabitdevs` ficou
+> bloqueada por exigir aprovação de um Owner da organização, sem acesso
+> claro/alcançável no momento — um bloqueio inerente a esse modelo de
+> integração (Netlify, Vercel, Cloudflare Pages usam o mesmo App nativo),
+> não específico do Netlify. Isso não bloqueia necessariamente um deploy
+> via CLI/API desses mesmos provedores, autenticado por token, chamado de
+> dentro de uma GitHub Action — alternativa não avaliada nesta decisão (ver
+> ADR 0002). O conteúdo abaixo permanece como registro histórico da decisão
+> original.
 
 ## Contexto
 

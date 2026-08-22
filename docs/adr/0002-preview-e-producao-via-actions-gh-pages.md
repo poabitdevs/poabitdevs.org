@@ -8,19 +8,34 @@ das issues [#29](https://github.com/poabitdevs/poabitdevs.org/issues/29) e
 
 O [ADR 0001](0001-ambiente-homologacao-ad-hoc.md) optou por um provedor
 externo de staging (Netlify) para os previews por PR, evitando mexer na
-configuração de Pages de produção. Na tentativa de conectar o repositório ao
-Netlify, esbarramos em um bloqueio de governança: a organização
-`poabitdevs` não lista membros públicos, e a página de instalações da
-organização (`github.com/organizations/poabitdevs/settings/installations`)
-retorna 404 para quem tentou o setup — apesar de ser admin do repositório,
-não há confirmação de quem é Owner da organização, e instalar um GitHub App
-num repositório de organização exige aprovação de um Owner. Esse bloqueio
-não é específico do Netlify: Vercel e Cloudflare Pages usam o mesmo modelo
-de autenticação via GitHub App, então trocar de provedor não resolveria.
+configuração de Pages de produção — especificamente, pela integração
+nativa via GitHub App desse provedor (a que oferece Deploy Previews e
+comentário automático no PR prontos, sem código nosso). Na tentativa de
+instalar essa integração, esbarramos em um bloqueio de governança: a
+organização `poabitdevs` não lista membros públicos, e a página de
+instalações da organização
+(`github.com/organizations/poabitdevs/settings/installations`) retorna 404
+para quem tentou o setup — apesar de ser admin do repositório, não há
+confirmação de quem é Owner da organização, e instalar um GitHub App num
+repositório de organização exige aprovação de um Owner. Esse bloqueio não é
+específico do Netlify: Vercel e Cloudflare Pages usam o mesmo modelo de
+integração nativa via GitHub App, então trocar de provedor não resolveria.
 
-Duas alternativas foram cogitadas para contornar isso: usar um repositório
-privado pessoal só para homologação (rejeitada — fragmenta a governança de
-um projeto comunitário para uma conta pessoal, e exigiria automação extra
+Isso não bloqueia necessariamente um deploy via CLI/API desses mesmos
+provedores (por exemplo, `netlify deploy` autenticado por um token salvo
+como secret do repositório), chamado de dentro de uma GitHub Action — essa
+via não depende de instalar nenhum App na organização. Não avaliamos essa
+alternativa a fundo porque a solução que adotamos abaixo (Actions + branch
+`gh-pages`) já resolve o problema sem depender de conta, token ou secret
+externo nenhum — mas registrando aqui para não parecer que descartamos um
+caminho viável por omissão: o custo de mantê-lo seria gerenciar uma conta e
+secrets de um provedor externo só para ganhar a conveniência do comentário
+automático no PR, que de qualquer forma teríamos que implementar nós
+mesmos na nossa própria Action.
+
+Duas outras alternativas foram cogitadas: usar um repositório privado
+pessoal só para homologação (rejeitada — fragmenta a governança de um
+projeto comunitário para uma conta pessoal, e exigiria automação extra
 para espelhar PRs do repositório oficial) e reavaliar o desenho original
 considerado no ADR 0001 antes da escolha do provedor externo: publicar
 previews em subcaminhos de uma branch `gh-pages` do próprio GitHub Pages.
@@ -43,11 +58,24 @@ Actions, usando a branch `gh-pages` como única fonte do GitHub Pages:
 - **Pré-requisito nos templates:** os templates do site hoje usam
   `site.github.url` (`_includes/header.html`, `_includes/head.html`) e
   caminhos absolutos de raiz — `/events.html` em `index.html`, `/feed.xml`
-  em `_includes/footer.html`, `/favicon.ico` em `_includes/head.html` —,
-  nenhum usa `site.baseurl`. Um preview publicado num subcaminho com esses
-  templates navegaria de volta para produção. Antes do workflow de preview
-  funcionar, os templates precisam trocar essas referências por
-  `{{ site.baseurl }}`/o filtro `relative_url` do Jekyll.
+  em `_includes/footer.html`, `/favicon.ico` em `_includes/head.html`,
+  `{{ post.url }}` em `index.html` e `events.html` (gerado pelo Jekyll já
+  relativo à raiz, sem levar `baseurl` em conta) —, nenhum usa
+  `site.baseurl`. Um preview publicado num subcaminho com esses templates
+  navegaria de volta para produção. Antes do workflow de preview
+  funcionar, os cinco arquivos (`_includes/header.html`,
+  `_includes/head.html`, `_includes/footer.html`, `index.html`,
+  `events.html`) precisam trocar essas referências pelo filtro
+  `relative_url` do Jekyll.
+- **Pré-requisito no `_config.yml`:** a chave `baseurl` já está definida lá
+  como `https://poabitdevs.com` — um domínio completo (e errado: o CNAME
+  real do Pages é `poabitdevs.org`) onde deveria haver só um path relativo
+  vazio. Isso está adormecido hoje porque nenhum template usa
+  `site.baseurl`/`relative_url`; assim que os templates forem corrigidos,
+  esse valor passaria a vazar para qualquer build que não sobrescreva
+  `--baseurl` explicitamente — inclusive o de produção. `_config.yml`
+  precisa zerar essa chave (`baseurl: ""`) antes da migração dos
+  templates.
 - **No PR** (aberto, sincronizado ou reaberto, só de branches do próprio
   repositório — ver "Fora de escopo" abaixo): uma Action builda o Jekyll a
   partir de `refs/pull/<número>/merge` (o merge sintético do PR com o
@@ -62,9 +90,11 @@ Actions, usando a branch `gh-pages` como única fonte do GitHub Pages:
 - **No fechamento do PR:**
   - Se mergeado: em vez de mover o diretório do preview como se fosse o
     artefato final, a Action builda a produção **de novo**, com
-    `bundle exec jekyll build` (sem `baseurl`), a partir do commit de merge
-    resultante, e publica esse resultado na raiz de `gh-pages`. Isso
-    abandona a garantia literal de "zero rebuild" — necessária porque o
+    `bundle exec jekyll build` (sem `--baseurl`, contando com o
+    `baseurl: ""` corrigido no `_config.yml` — ver pré-requisito acima),
+    a partir do commit de merge resultante, e publica esse resultado na
+    raiz de `gh-pages`. Isso abandona a garantia literal de "zero rebuild"
+    — necessária porque o
     Jekyll grava o `baseurl` no HTML no momento do build, então o mesmo
     artefato do preview não pode ser servido correto em dois caminhos
     diferentes (subcaminho e raiz). A garantia que sobra é mais modesta,
@@ -81,18 +111,26 @@ Actions, usando a branch `gh-pages` como única fonte do GitHub Pages:
     preview daquele estado específico ainda está rodando ou falhou —
     furando a premissa de que nada vai para produção sem ter sido
     homologado antes. As duas regras juntas fecham essa lacuna.
-  - Todos os jobs que escrevem em `gh-pages` (build de preview, limpeza no
-    fechamento sem merge, e publicação de produção) compartilham um único
-    grupo de `concurrency` do GitHub Actions, rodando em série — não só os
-    de produção entre si, já que preview e limpeza escrevem na mesma
-    branch e também podem colidir. Isso serializa a execução, mas
-    `concurrency` não garante que a ordem de execução bata com a ordem em
-    que os merges foram disparados. Por isso, imediatamente antes de
-    escrever, o job de publicação de produção compara o SHA que está
-    prestes a publicar com o HEAD atual de `master`: se `master` já
-    avançou para um commit mais novo enquanto este job rodava, ele é
-    obsoleto e aborta sem publicar, deixando o job do merge mais recente
-    (que vai rodar em seguida, pela fila) prevalecer.
+  - A publicação de produção usa seu **próprio** grupo de `concurrency`
+    (`gh-pages-production`), separado do grupo usado por preview/limpeza.
+    `concurrency` não é uma fila: por grupo, o GitHub Actions mantém no
+    máximo uma execução em andamento e uma pendente — uma nova execução
+    *substitui* a pendente, não entra atrás dela. Um único grupo
+    compartilhado entre produção e preview criaria um risco novo: um
+    preview de PR não relacionado poderia cancelar um deploy de produção
+    que estava pendente, e esse merge nunca seria publicado. Manter grupos
+    separados evita que atividade de preview descarte trabalho de
+    produção pendente (preview/limpeza entre si podem se coalescer sem
+    problema, já que cada nova execução reflete o estado mais atual do
+    seu próprio PR).
+  - Mesmo isolado, o grupo de produção ainda pode coalescer dois merges
+    muito próximos (o mais antigo, pendente, é substituído pelo mais
+    novo). Por isso o job de publicação de produção não confia no SHA que
+    o disparou: ele sempre builda e publica o HEAD **atual** de `master`
+    no momento em que roda, não o commit do evento que o originou. Assim,
+    mesmo que uma execução intermediária seja descartada pela
+    coalescência, a que efetivamente rodar por último publica o estado
+    mais recente — nenhum merge fica de fora permanentemente.
   - Se fechado sem merge: o subcaminho `pr-preview/pr-<número>/` é
     simplesmente removido.
 
@@ -136,14 +174,16 @@ qualquer um dos dois caminhos).
 - Não elimina totalmente a divergência hml/prd: produção é buildada de novo
   no merge (com `baseurl` diferente do preview), não é uma promoção sem
   rebuild — objetivo original da issue #32 só parcialmente alcançado.
-- Exige corrigir os templates do site (`site.github.url` e caminhos
-  absolutos de raiz) para usar `site.baseurl`/`relative_url` antes de
-  qualquer preview funcionar corretamente.
+- Exige corrigir os templates do site (`site.github.url`, caminhos
+  absolutos de raiz e `post.url`) para usar `relative_url`, e zerar o
+  `baseurl` incorreto do `_config.yml`, antes de qualquer preview
+  funcionar corretamente.
 - O workflow de Actions fica mais complexo do que uma integração nativa de
   provedor externo: precisa tratar PR aberto/sincronizado, fechado com
-  merge e fechado sem merge, além de serializar (via `concurrency`) todas
-  as operações de escrita na branch `gh-pages` — preview, limpeza e
-  publicação de produção — e checar obsolescência antes de publicar.
+  merge e fechado sem merge, usar grupos de `concurrency` separados para
+  produção e para preview/limpeza, e fazer a publicação de produção
+  sempre reconciliar com o HEAD atual de `master` (não com o SHA que
+  disparou o job) para sobreviver à coalescência de execuções.
 - Previews não são suportados para PRs de forks nesta etapa (ver "Fora de
   escopo" acima) — só contribuições via branch do próprio repositório.
 - Os previews continuam publicamente acessíveis (GitHub Pages não oferece
@@ -152,14 +192,18 @@ qualquer um dos dois caminhos).
 
 ## Próximos passos
 
+- Zerar o `baseurl` do `_config.yml` (hoje `https://poabitdevs.com`,
+  incorreto e adormecido).
 - Corrigir os templates (`_includes/header.html`, `_includes/head.html`,
-  `index.html`, `_includes/footer.html`) para usar `site.baseurl`/
-  `relative_url` em vez de `site.github.url`/caminhos absolutos.
+  `_includes/footer.html`, `index.html`, `events.html`) para usar
+  `relative_url` em vez de `site.github.url`/caminhos absolutos/`post.url`
+  cru.
 - Implementar o workflow de Actions: build + publicação do preview com
   `baseurl` a partir de `refs/pull/<N>/merge`, comentário automático no
-  PR, rebuild + publicação de produção no merge (com checagem de
-  obsolescência antes de publicar), limpeza no fechamento sem merge — todos
-  compartilhando um único grupo de `concurrency` na branch `gh-pages`.
+  PR, rebuild de produção no merge (sempre a partir do HEAD atual de
+  `master` no momento em que roda, não do SHA que disparou o job),
+  limpeza no fechamento sem merge — produção usando um grupo de
+  `concurrency` próprio, separado do grupo de preview/limpeza.
 - Habilitar "Require branches to be up to date before merging" **e**
   marcar o status check do workflow de preview como obrigatório para o
   merge, na `master`.
