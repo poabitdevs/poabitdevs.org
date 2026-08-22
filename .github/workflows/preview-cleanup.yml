@@ -1,0 +1,32 @@
+name: Preview Cleanup
+
+# pull_request_target (não pull_request): o Actions usa a versão deste
+# arquivo que está em master, mesmo que o PR fechado tenha alterado este
+# workflow — e o checkout abaixo, sem `ref:`, também baixa master, nunca o
+# código do PR. Só o número do PR vem do evento; nenhum código do PR é
+# executado. Ver ADR 0002, emenda.
+
+on:
+  pull_request_target:
+    types: [closed]
+
+permissions:
+  contents: write
+
+jobs:
+  cleanup-preview:
+    name: cleanup-preview
+    runs-on: ubuntu-latest
+    concurrency:
+      group: gh-pages-preview-${{ github.event.pull_request.number }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Remover preview
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          .github/scripts/publish-gh-pages.sh \
+            "pr-preview/pr-${{ github.event.pull_request.number }}" \
+            "--delete" \
+            "Limpeza do preview do PR #${{ github.event.pull_request.number }}"

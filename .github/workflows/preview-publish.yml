@@ -1,0 +1,75 @@
+name: Preview Publish
+
+# Disparado por workflow_run (não por pull_request): o Actions usa sempre a
+# versão deste arquivo que está em master, nunca a de um PR — mesmo que o
+# PR tenha alterado este workflow ou o script de publicação, essa versão
+# alterada nunca roda com o token de escrita. Ver ADR 0002, emenda.
+
+on:
+  workflow_run:
+    workflows: ["Preview Build"]
+    types: [completed]
+
+permissions:
+  contents: write
+  pull-requests: write
+  actions: read
+
+jobs:
+  publish:
+    name: publish
+    if: >-
+      github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.head_repository.full_name == github.repository
+    runs-on: ubuntu-latest
+    concurrency:
+      group: gh-pages-preview-${{ github.event.workflow_run.pull_requests[0].number }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Baixar build do preview
+        uses: actions/download-artifact@v4
+        with:
+          name: preview-site
+          path: _site
+          run-id: ${{ github.event.workflow_run.id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Publicar preview
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_NUMBER: ${{ github.event.workflow_run.pull_requests[0].number }}
+          HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
+        run: |
+          .github/scripts/publish-gh-pages.sh \
+            "pr-preview/pr-${PR_NUMBER}" \
+            "_site" \
+            "Preview do PR #${PR_NUMBER} (${HEAD_SHA})"
+
+      - name: Comentar link do preview no PR
+        uses: actions/github-script@v7
+        env:
+          PR_NUMBER: ${{ github.event.workflow_run.pull_requests[0].number }}
+          HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
+        with:
+          script: |
+            const { owner, repo } = context.repo;
+            const prNumber = Number(process.env.PR_NUMBER);
+            const marker = '<!-- gh-pages-preview-comment -->';
+            const url = `https://${owner}.github.io/${repo}/pr-preview/pr-${prNumber}/`;
+            const body = `${marker}\n🔍 Preview publicado: ${url}\n\nAtualizado a partir do commit ${process.env.HEAD_SHA}.`;
+
+            const comments = await github.paginate(github.rest.issues.listComments, {
+              owner,
+              repo,
+              issue_number: prNumber,
+            });
+            const existing = comments.find(
+              (c) => c.user?.login === 'github-actions[bot]' && c.body && c.body.includes(marker)
+            );
+
+            if (existing) {
+              await github.rest.issues.updateComment({ owner, repo, comment_id: existing.id, body });
+            } else {
+              await github.rest.issues.createComment({ owner, repo, issue_number: prNumber, body });
+            }

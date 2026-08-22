@@ -1,0 +1,40 @@
+name: Preview Build
+
+# Sem escopo de escrita nem segredos: este job roda com o código do PR
+# (refs/pull/<n>/merge), então não pode ter permissão que valha a pena
+# abusar — quem publica é o preview-publish.yml, disparado por workflow_run
+# e sempre com o conteúdo confiável de master (ver ADR 0002, emenda).
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: preview-build-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: refs/pull/${{ github.event.pull_request.number }}/merge
+          persist-credentials: false
+
+      - uses: ruby/setup-ruby@v1
+        with:
+          bundler-cache: true
+
+      - name: Build
+        run: bundle exec jekyll build --baseurl "/pr-preview/pr-${{ github.event.pull_request.number }}"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: preview-site
+          path: _site
+          retention-days: 1

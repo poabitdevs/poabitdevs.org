@@ -249,3 +249,43 @@ Essas etapas ficam para os próximos PRs da issue
 [#29](https://github.com/poabitdevs/poabitdevs.org/issues/29), que passa a
 cobrir também o que estava reservado para a issue
 [#32](https://github.com/poabitdevs/poabitdevs.org/issues/32).
+
+## Emenda (2026-08-22): build e publicação separados também para PRs do próprio repositório
+
+Achado de uma revisão do Copilot no PR
+[#36](https://github.com/poabitdevs/poabitdevs.org/pull/36), durante a
+implementação dos "Próximos passos" acima: a decisão original tratou o
+`GITHUB_TOKEN` somente-leitura de PRs de fork como a razão suficiente para
+adiar a separação build/publicação — mas essa é uma restrição que a própria
+plataforma impõe só a forks. Para um PR de branch do próprio repositório,
+não existe essa restrição: o token recebe o escopo declarado no workflow
+(`contents: write`), e o evento `pull_request` executa a versão do
+workflow **do próprio PR**, incluindo qualquer alteração que o PR faça no
+workflow ou nos scripts que ele chama. Um PR desse tipo poderia, portanto,
+editar o passo de publicação do preview (ou o de limpeza) para escrever
+fora do seu subcaminho — inclusive na raiz de produção — só de ser aberto
+ou atualizado, sem passar por review nem merge. Isso não era um risco já
+aceito pela decisão original; é uma lacuna que ela não considerou, porque
+avaliou só a mitigação automática de forks.
+
+Correção: separar build de publicação também para PRs do próprio
+repositório, adiantando para agora o desenho que já estava previsto (na
+seção "Fora de escopo") para quando o projeto passasse a aceitar forks:
+
+- **Build** (`preview-build.yml`, evento `pull_request`): builda o Jekyll
+  a partir do código do PR, mas sem `contents: write` nem segredos —
+  publica o `_site` só como artifact. Roda com código potencialmente não
+  confiável, mas sem nada de valor para abusar.
+- **Publicação** (`preview-publish.yml`, evento `workflow_run` disparado
+  pelo build): baixa o artifact e escreve em `gh-pages` com o token de
+  escrita — mas roda sempre com a versão do workflow que está em `master`,
+  nunca a do PR (garantia do próprio evento `workflow_run`), então nunca
+  executa código do PR no contexto privilegiado.
+- **Limpeza** (`preview-cleanup.yml`, evento `pull_request_target` em vez
+  de `pull_request`): mesma garantia de rodar sempre com o conteúdo de
+  `master` — e como a limpeza não precisa executar nada do PR (só apaga um
+  subcaminho fixo pelo número do PR), não precisa do desenho build/publish
+  em duas etapas, só da troca de evento.
+
+`production.yml` não foi afetado: já rodava só em `push` para `master`,
+nunca com conteúdo de PR.
