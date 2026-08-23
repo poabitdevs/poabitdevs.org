@@ -109,8 +109,13 @@ sua vez estende `default`. `page.html` e `blog.html` também estendem
 repositório, o feed RSS e o bloco de build info (ver "Identificando o
 pipeline que gerou um build" abaixo). Todos os links internos usam o filtro
 `relative_url` do Jekyll (não caminhos absolutos de raiz crus) — necessário
-porque o mesmo artefato pode ser publicado tanto na raiz do site (produção)
-quanto num subcaminho (`/pr-preview/pr-<n>/`, ver próxima seção).
+porque produção e cada preview são builds separados com `baseurl`
+diferente (produção builda sem `--baseurl`, na raiz; cada preview builda
+com `--baseurl /pr-preview/pr-<n>`, ver próxima seção): um caminho
+absoluto cru sempre resolveria para a raiz de produção, quebrando a
+navegação dentro de qualquer preview. O `baseurl` fica gravado no HTML no
+momento do build — o mesmo artefato não é portável entre os dois
+caminhos, cada build já nasce correto para o seu próprio destino.
 
 ## Pipeline de build e deploy
 
