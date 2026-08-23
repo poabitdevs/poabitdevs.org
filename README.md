@@ -37,9 +37,10 @@ Jekyll injects variables, so be sure to update both.
 
 ## Deploying & Previews
 
-The site is built and published by GitHub Actions to the `gh-pages` branch
-(GitHub Pages source) — do not edit `gh-pages` directly, it's regenerated on
-every push.
+GitHub Actions builds and publishes the site to the `gh-pages` branch — the
+destination already prepared to be the GitHub Pages source, though not the
+active one yet (see "Transitional state" below). Do not edit `gh-pages`
+directly, it's regenerated on every push.
 
 * Every pull request from a branch of this repository (forks aren't
   supported yet) gets an automatic preview published at
