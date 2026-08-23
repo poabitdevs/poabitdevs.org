@@ -6,7 +6,11 @@ externas. Complementa, sem duplicar, o [`AGENTS.md`](../AGENTS.md)
 (convenções técnicas e comandos) e o [`CONTRIBUTING.md`](../CONTRIBUTING.md)
 (processo de criação de uma edição). Decisões e trade-offs do pipeline de
 build/deploy ficam registrados em [`docs/adr/`](adr/) — este documento
-descreve o estado resultante, não repete o raciocínio por trás dele.
+descreve o estado resultante, não repete o raciocínio por trás dele. O
+[`README.md`](../README.md) cobre o mesmo pipeline de build/deploy numa
+versão curta, em inglês, voltada a quem só quer subir o projeto ou
+entender o fluxo de PR sem ler a referência completa — as duas descrições
+precisam ser mantidas em sincronia manualmente.
 
 ## Stack
 
@@ -108,9 +112,11 @@ quanto num subcaminho (`/pr-preview/pr-<n>/`, ver próxima seção).
 
 ## Pipeline de build e deploy
 
-Quatro workflows de GitHub Actions constroem e publicam a branch
-`gh-pages` — o destino já preparado para ser a fonte do GitHub Pages, ainda
-não ativo como tal (ver "Estado transitório" abaixo):
+Versão resumida, para quem só quer entender o fluxo de PR:
+[`README.md#deploying--previews`](../README.md#deploying--previews).
+Detalhado abaixo: quatro workflows de GitHub Actions constroem e publicam
+a branch `gh-pages` — o destino já preparado para ser a fonte do GitHub
+Pages, ainda não ativo como tal (ver "Estado transitório" abaixo):
 
 - **`preview-build.yml`** (evento `pull_request`, sem permissão de escrita
   nem segredos): builda o Jekyll a partir de `refs/pull/<n>/merge` com
