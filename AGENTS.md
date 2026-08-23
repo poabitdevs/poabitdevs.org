@@ -1,5 +1,11 @@
 # AGENTS.md
 
+## Edition Process
+For the end-to-end process of creating a new edition (suggestions issue →
+curation → post PR → merge), see [`CONTRIBUTING.md`](CONTRIBUTING.md). This
+section and "Creating Posts" below only cover the technical conventions of
+the post file itself.
+
 ## Build Commands
 - `make build` - Build Jekyll site
 - `make preview` - Serve Jekyll site locally with drafts/future posts
