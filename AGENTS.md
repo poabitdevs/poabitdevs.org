@@ -1,5 +1,10 @@
 # AGENTS.md
 
+## Architecture
+For the full architecture reference (stack, directory layout, content
+model, build/deploy pipeline, external integrations), see
+[`docs/arquitetura.md`](docs/arquitetura.md).
+
 ## Edition Process
 For the end-to-end process of creating a new edition (suggestions issue →
 curation → post PR → merge), see [`CONTRIBUTING.md`](CONTRIBUTING.md). This
