@@ -60,11 +60,10 @@ precisam ser mantidas em sincronia manualmente:
   `site.data.settings.*` pelo header (`_includes/header.html`, nome do
   site) e pelo `<title>` da página (`_includes/head.html`).
 - O parágrafo "sobre" da home está hardcoded em `index.html`, sem ler
-  `site.data.settings.tagline` nem `site.description` — uma quarta fonte
-  de fato, textualmente igual à `tagline` hoje, mas sem nenhum vínculo que
-  garanta isso no futuro.
+  `site.data.settings.tagline` nem `site.description` — textualmente igual
+  à `tagline` hoje, mas sem nenhum vínculo que garanta isso no futuro.
 
-Atualizar só duas dessas três (ou quatro) fontes deixa a divergência
+Atualizar só duas dessas três fontes deixa a divergência
 visível para quem lê o site.
 
 ## Modelo de conteúdo
@@ -159,9 +158,11 @@ commit, timestamp UTC e nome do pipeline em `_data/build.yml` — gerado a
 cada build, nunca commitado. `_includes/footer.html` renderiza esse dado
 (oculto por padrão; `?debug` na URL revela, ou o comentário HTML acima do
 bloco no código-fonte da página). Um build legacy do Pages nunca gera esse
-arquivo, então seu rodapé sempre mostra "desconhecido" — forma rápida de
-diferenciar qual pipeline publicou o que está sendo visto, relevante
-enquanto o estado transitório acima persistir.
+arquivo, então seu rodapé sempre mostra `sha`/`timestamp` como "desconhecido"
+e `pipeline` como "legacy-ou-local-sem-info" (defaults do Liquid em
+`_includes/footer.html`) — forma rápida de diferenciar qual pipeline
+publicou o que está sendo visto, relevante enquanto o estado transitório
+acima persistir.
 
 ## Build local
 
