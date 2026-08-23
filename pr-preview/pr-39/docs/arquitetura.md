@@ -94,13 +94,16 @@ formatação do corpo estão no [`AGENTS.md`](../AGENTS.md).
 
 ## Layouts e templates
 
-`_layouts/default.html` é a base (inclui `head`, `header`, `footer`);
-`page.html`, `post.html` e `blog.html` estendem `default` para os três
-tipos de página do site. `_includes/header.html` lê o menu de navegação de
+`_layouts/default.html` é a base (inclui `head`, `header`, `footer`) e o
+único layout ativo hoje: `index.html`, `events.html` e `404.html` o usam
+diretamente, e todos os 17 posts em `_posts/` usam `layout: post`, que por
+sua vez estende `default`. `page.html` e `blog.html` também estendem
+`default` e estão disponíveis, mas nenhum conteúdo os usa atualmente.
+`_includes/header.html` lê o menu de navegação de
 `site.data.settings.menu`; `_includes/footer.html` renderiza o link do
 repositório, o feed RSS e o bloco de build info (ver "Identificando o
 pipeline que gerou um build" abaixo). Todos os links internos usam o filtro
-`relative_url` do Jekyll (não caminhos absolutos de raiz cru) — necessário
+`relative_url` do Jekyll (não caminhos absolutos de raiz crus) — necessário
 porque o mesmo artefato pode ser publicado tanto na raiz do site (produção)
 quanto num subcaminho (`/pr-preview/pr-<n>/`, ver próxima seção).
 
@@ -118,7 +121,10 @@ não ativo como tal (ver "Estado transitório" abaixo):
   um PR, mesmo que o PR o tenha alterado —, baixa o artifact, escreve em
   `gh-pages:pr-preview/pr-<n>/` e comenta o link no PR. Também mantém um
   commit status `preview/publish` (pendente → sucesso/erro/falha) na tip do
-  PR.
+  PR. Só publica para PRs do próprio repositório (condição
+  `head_repository.full_name == github.repository`) — PRs de fork ficam
+  só com o build sem privilégios de `preview-build.yml`, sem preview,
+  comentário ou status.
 - **`preview-cleanup.yml`** (evento `pull_request_target`, mesma garantia de
   rodar sempre a versão de `master`): ao fechar um PR, remove seu
   subcaminho de preview e invalida o status `preview/publish` associado.
