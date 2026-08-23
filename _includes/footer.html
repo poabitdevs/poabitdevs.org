@@ -19,7 +19,7 @@
   <script>
     (function () {
       if (new URLSearchParams(location.search).has('debug')) {
-        var el = document.getElementById('footer-build-info');
+        const el = document.getElementById('footer-build-info');
         if (el) el.hidden = false;
       }
     })();
