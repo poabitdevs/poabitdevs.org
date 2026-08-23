@@ -6,7 +6,7 @@ plugins: [jekyll-sitemap, jekyll-feed, jekyll-seo-tag]
 
 sass:
   sass_dir: assets/css
-  style: :compressed
+  style: compressed
 
 url: https://poabitdevs.org
 baseurl: ""
