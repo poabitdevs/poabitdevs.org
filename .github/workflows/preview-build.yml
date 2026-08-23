@@ -30,6 +30,17 @@ jobs:
         with:
           bundler-cache: true
 
+      # site.data.build fica disponível no rodapé (ver _includes/footer.html)
+      # para identificar, no site publicado, qual commit/pipeline gerou o
+      # build — útil sobretudo enquanto o Pages legacy (que nunca gera esse
+      # arquivo) e este pipeline convivem.
+      - name: Registrar informação de build
+        run: |
+          mkdir -p _data
+          echo "sha: \"$(git rev-parse --short HEAD)\"" > _data/build.yml
+          echo "timestamp: \"$(date -u +%Y-%m-%dT%H:%M:%SZ)\"" >> _data/build.yml
+          echo "pipeline: \"actions-preview\"" >> _data/build.yml
+
       - name: Build
         run: bundle exec jekyll build --baseurl "/pr-preview/pr-${{ github.event.pull_request.number }}"
 

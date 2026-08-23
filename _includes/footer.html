@@ -10,4 +10,18 @@
       <a href="{{ '/feed.xml' | relative_url }}">RSS Feed</a>
     </div>
   </div>
+  <!-- build: {{ site.data.build.sha | default: "desconhecido" }} · {{ site.data.build.timestamp | default: "desconhecido" }} · pipeline={{ site.data.build.pipeline | default: "legacy-ou-local-sem-info" }} -->
+  <div class="Footer-build" id="footer-build-info" hidden>
+    build <code>{{ site.data.build.sha | default: "desconhecido" }}</code> ·
+    {{ site.data.build.timestamp | default: "desconhecido" }} ·
+    {{ site.data.build.pipeline | default: "legacy-ou-local-sem-info" }}
+  </div>
+  <script>
+    (function () {
+      if (new URLSearchParams(location.search).has('debug')) {
+        const el = document.getElementById('footer-build-info');
+        if (el) el.hidden = false;
+      }
+    })();
+  </script>
 </footer>
