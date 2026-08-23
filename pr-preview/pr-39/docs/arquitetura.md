@@ -50,13 +50,22 @@ events.html   Listagem de todas as edições do Seminário Socrático
 404.html      Página de erro 404
 ```
 
-`_config.yml` guarda a configuração de build do Jekyll (plugins, permalink,
-Sass) e alguns metadados do site (`title`, `description`) que também
-existem, duplicados, em `_data/settings.yml` — Jekyll injeta variáveis de
-formas diferentes dependendo de onde elas vêm, então os templates usam a
-fonte que for conveniente em cada caso (`site.data.settings.*` no header e
-na home; `site.title`/`site.description` para SEO/feed via os plugins).
-Atualizar um sem o outro deixa essa duplicação inconsistente.
+O texto "sobre" do site existe em **três** cópias independentes, que
+precisam ser mantidas em sincronia manualmente:
+
+- `title`/`description` em `_config.yml`, usados por `site.title`/
+  `site.description` — consumidos pelos plugins de SEO/feed
+  (`jekyll-seo-tag`, `jekyll-feed`), não por nenhum template.
+- `title`/`tagline` em `_data/settings.yml`, lidos como
+  `site.data.settings.*` pelo header (`_includes/header.html`, nome do
+  site) e pelo `<title>` da página (`_includes/head.html`).
+- O parágrafo "sobre" da home está hardcoded em `index.html`, sem ler
+  `site.data.settings.tagline` nem `site.description` — uma quarta fonte
+  de fato, textualmente igual à `tagline` hoje, mas sem nenhum vínculo que
+  garanta isso no futuro.
+
+Atualizar só duas dessas três (ou quatro) fontes deixa a divergência
+visível para quem lê o site.
 
 ## Modelo de conteúdo
 
@@ -97,10 +106,9 @@ quanto num subcaminho (`/pr-preview/pr-<n>/`, ver próxima seção).
 
 ## Pipeline de build e deploy
 
-O site é publicado no GitHub Pages a partir da branch `gh-pages`, gerada
-inteiramente por GitHub Actions — não por push manual nem pelo build
-legacy nativo do Pages a partir de `master`. Quatro workflows cobrem o
-ciclo:
+Quatro workflows de GitHub Actions constroem e publicam a branch
+`gh-pages` — o destino já preparado para ser a fonte do GitHub Pages, ainda
+não ativo como tal (ver "Estado transitório" abaixo):
 
 - **`preview-build.yml`** (evento `pull_request`, sem permissão de escrita
   nem segredos): builda o Jekyll a partir de `refs/pull/<n>/merge` com
@@ -163,10 +171,12 @@ alternativa opcional a instalar Ruby diretamente.
 - **Meetup:** plataforma de inscrição legada, ainda referenciada via link
   no menu principal (`_data/settings.yml`) e no campo `meetup:` de posts
   antigos. `_offline/scrape-events.js` é um script Node.js standalone
-  (fora do pipeline de build do site) que usa a API do Meetup, autenticada
-  por `MEETUP_API_KEY`, para fazer backfill de dados históricos de eventos
-  — não roda como parte de nenhum workflow, só manualmente quando
-  necessário.
+  (fora do pipeline de build do site) para fazer backfill de dados
+  históricos de eventos: lê `_offline/events.json` local e só recorre à
+  API pública do Meetup, sem autenticação, se essa leitura falhar — não
+  roda como parte de nenhum workflow, só manualmente quando necessário. O
+  `_offline/README.md` documenta uma variável `MEETUP_API_KEY` que o
+  script hoje não lê nem usa.
 - **GitHub:** hospedagem (Pages), CI/CD (Actions) e o próprio fluxo de
   contribuição (issues, PRs) descrito no [`CONTRIBUTING.md`](../CONTRIBUTING.md).
 
