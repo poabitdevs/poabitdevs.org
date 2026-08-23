@@ -87,12 +87,11 @@ meetup: <url>    # legado — só em posts antigos, ver abaixo
 
 `type` distingue Seminários Socráticos de posts da série whitepaper; a home
 (`index.html`) mostra os dois tipos, enquanto `events.html` filtra só por
-`socratic`. O campo de inscrição está em transição do Meetup para a Luma: posts novos
-usam `luma`, mantendo `meetup` em paralelo quando ainda fizer sentido (caso
-do post mais recente, `017`); `meetup` sozinho continua funcionando nos
-posts antigos que já o tinham antes da transição — o layout `post.html`
-renderiza cada link se o campo correspondente existir, sem exigir os dois.
-O processo completo de criação de uma edição — da issue de
+`socratic`. `luma` e `meetup` são os campos de inscrição — o layout
+`post.html` renderiza cada link independentemente, se o campo
+correspondente existir, sem exigir os dois; qual usar, e o estado atual da
+transição entre as duas plataformas, é convenção do processo de edição,
+coberta abaixo. O processo completo de criação de uma edição — da issue de
 sugestões de pauta ao merge do post — está no
 [`CONTRIBUTING.md`](../CONTRIBUTING.md); convenções de frontmatter e
 formatação do corpo estão no [`AGENTS.md`](../AGENTS.md).
@@ -111,11 +110,10 @@ pipeline que gerou um build" abaixo). Todos os links internos usam o filtro
 `relative_url` do Jekyll (não caminhos absolutos de raiz crus) — necessário
 porque produção e cada preview são builds separados com `baseurl`
 diferente (produção builda sem `--baseurl`, na raiz; cada preview builda
-com `--baseurl /pr-preview/pr-<n>`, ver próxima seção): um caminho
-absoluto cru sempre resolveria para a raiz de produção, quebrando a
-navegação dentro de qualquer preview. O `baseurl` fica gravado no HTML no
-momento do build — o mesmo artefato não é portável entre os dois
-caminhos, cada build já nasce correto para o seu próprio destino.
+com `--baseurl /pr-preview/pr-<n>`, ver próxima seção). O porquê disso ser
+necessário (o `baseurl` gravado no HTML no momento do build) está na
+[ADR 0002](adr/0002-preview-e-producao-via-actions-gh-pages.md), seção
+"Pré-requisito nos templates".
 
 ## Pipeline de build e deploy
 
