@@ -88,9 +88,11 @@ meetup: <url>    # legado — só em posts antigos, ver abaixo
 `type` distingue Seminários Socráticos de posts da série whitepaper; a home
 (`index.html`) mostra os dois tipos, enquanto `events.html` filtra só por
 `socratic`. O campo de inscrição está em transição do Meetup para a Luma: posts novos
-usam `luma`; `meetup` continua funcionando (o layout `post.html` renderiza
-o link se o campo existir) só para posts que já o tinham antes da
-transição. O processo completo de criação de uma edição — da issue de
+usam `luma`, mantendo `meetup` em paralelo quando ainda fizer sentido (caso
+do post mais recente, `017`); `meetup` sozinho continua funcionando nos
+posts antigos que já o tinham antes da transição — o layout `post.html`
+renderiza cada link se o campo correspondente existir, sem exigir os dois.
+O processo completo de criação de uma edição — da issue de
 sugestões de pauta ao merge do post — está no
 [`CONTRIBUTING.md`](../CONTRIBUTING.md); convenções de frontmatter e
 formatação do corpo estão no [`AGENTS.md`](../AGENTS.md).
