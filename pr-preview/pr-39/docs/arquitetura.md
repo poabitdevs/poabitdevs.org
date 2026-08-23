@@ -82,8 +82,8 @@ meetup: <url>    # legado — só em posts antigos, ver abaixo
 ```
 
 `type` distingue Seminários Socráticos de posts da série whitepaper; a home
-(`index.html`) e `events.html` filtram por esse campo ao listar posts. O
-campo de inscrição está em transição do Meetup para a Luma: posts novos
+(`index.html`) mostra os dois tipos, enquanto `events.html` filtra só por
+`socratic`. O campo de inscrição está em transição do Meetup para a Luma: posts novos
 usam `luma`; `meetup` continua funcionando (o layout `post.html` renderiza
 o link se o campo existir) só para posts que já o tinham antes da
 transição. O processo completo de criação de uma edição — da issue de
@@ -168,8 +168,13 @@ acima persistir.
 
 `make build`/`make preview` (ou os comandos `bundle exec jekyll` diretos)
 — ver [`AGENTS.md`](../AGENTS.md#build-commands) para a lista completa.
-`shell.nix` disponibiliza as dependências de sistema (Ruby) via Nix, como
-alternativa opcional a instalar Ruby diretamente.
+`shell.nix` disponibiliza via Nix os pacotes `jekyll` e `jekyll-feed`
+prontos (`nix-shell`), por fora do `Gemfile`/`bundle` — não cobre os
+demais gems do `Gemfile` (`jekyll-sitemap`, `jekyll-seo-tag`,
+`kramdown-parser-gfm`, `webrick` etc.) nem toolchain de build para
+extensões nativas. Não é um substituto completo de `bundle install`, só
+uma forma rápida de ter um `jekyll` básico disponível sem instalar Ruby
+diretamente.
 
 ## Integrações externas
 
