@@ -81,7 +81,7 @@ layout: post
 type: socratic   # ou whitepaper
 title: "Título"
 luma: <url>      # plataforma de inscrição atual
-meetup: <url>    # legado — só em posts antigos, ver abaixo
+meetup: <url>    # legado — mantido enquanto o post ainda precisar do link, ver abaixo
 ---
 ```
 
@@ -98,11 +98,12 @@ formatação do corpo estão no [`AGENTS.md`](../AGENTS.md).
 
 ## Layouts e templates
 
-`_layouts/default.html` é a base (inclui `head`, `header`, `footer`) e o
-único layout ativo hoje: `index.html`, `events.html` e `404.html` o usam
-diretamente, e todos os posts em `_posts/` usam `layout: post`, que por
-sua vez estende `default`. `page.html` e `blog.html` também estendem
-`default` e estão disponíveis, mas nenhum conteúdo os usa atualmente.
+`_layouts/default.html` é a base (inclui `head`, `header`, `footer`),
+usada diretamente por `index.html`, `events.html` e `404.html`.
+`post.html` estende `default` e também está ativo: todos os posts em
+`_posts/` usam `layout: post`. `page.html` e `blog.html` também estendem
+`default`, mas nenhum conteúdo os usa hoje — são os únicos dois layouts
+sem consumidor.
 `_includes/header.html` lê o menu de navegação de
 `site.data.settings.menu`; `_includes/footer.html` renderiza o link do
 repositório, o feed RSS e o bloco de build info (ver "Identificando o
@@ -192,8 +193,9 @@ diretamente.
 - **Luma:** plataforma de inscrição atual para as edições, referenciada só
   via link (`luma:` no frontmatter) — sem integração de API.
 - **Meetup:** plataforma de inscrição legada, ainda referenciada via link
-  no menu principal (`_data/settings.yml`) e no campo `meetup:` de posts
-  antigos. `_offline/scrape-events.js` é um script Node.js standalone
+  no menu principal (`_data/settings.yml`) e no campo `meetup:` dos posts
+  que ainda precisam do link legado, independente da data.
+  `_offline/scrape-events.js` é um script Node.js standalone
   (fora do pipeline de build do site) para fazer backfill de dados
   históricos de eventos: lê `_offline/events.json` local e só recorre à
   API pública do Meetup, sem autenticação, se essa leitura falhar — não
