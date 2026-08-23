@@ -161,7 +161,11 @@ admin do repositório, pendente (issue
 troca acontecer, o site ao vivo continua sendo republicado pelo build
 legacy do próprio GitHub a cada mudança em `master`, enquanto
 `production.yml` builda e publica em `gh-pages` em paralelo, sem efeito
-ainda no site ao vivo.
+ainda no site ao vivo. Isso também afeta os previews: o link que
+`preview-publish.yml` comenta no PR (`.../pr-preview/pr-<n>/`) publica de
+fato em `gh-pages`, mas essa branch não é servida enquanto a fonte do
+Pages continuar sendo o build legacy — o link resolve em 404 até a troca
+acontecer.
 
 ### Identificando o pipeline que gerou um build
 
