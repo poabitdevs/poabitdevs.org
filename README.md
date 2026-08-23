@@ -50,7 +50,9 @@ every push.
 * Closing a PR (merged or not) removes its preview.
 
 See [ADR 0002](docs/adr/0002-preview-e-producao-via-actions-gh-pages.md) for
-the full design and rationale.
+the full design and rationale, and [docs/arquitetura.md](docs/arquitetura.md)
+for the full architecture reference (stack, directory layout, content model,
+this same pipeline in more detail, and external integrations).
 
 > **Transitional state:** the GitHub Pages source is still the legacy build
 > from `master` — switching it to `gh-pages` needs repository admin access,
