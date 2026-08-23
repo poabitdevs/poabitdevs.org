@@ -96,7 +96,7 @@ formatação do corpo estão no [`AGENTS.md`](../AGENTS.md).
 
 `_layouts/default.html` é a base (inclui `head`, `header`, `footer`) e o
 único layout ativo hoje: `index.html`, `events.html` e `404.html` o usam
-diretamente, e todos os 17 posts em `_posts/` usam `layout: post`, que por
+diretamente, e todos os posts em `_posts/` usam `layout: post`, que por
 sua vez estende `default`. `page.html` e `blog.html` também estendem
 `default` e estão disponíveis, mas nenhum conteúdo os usa atualmente.
 `_includes/header.html` lê o menu de navegação de
