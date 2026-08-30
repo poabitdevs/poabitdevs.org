@@ -123,7 +123,7 @@
   <li><a href="https://groups.google.com/g/bitcoindev/c/aWYtPLVPZ3U" target="_blank">“Tripwire”: desabilitar opcodes de curva elíptica contra ameaça quântica</a> - Thread de Pieter Wuille propondo mecanismos apelidados “Tripwire” e “Miner Lockdown” para desabilitar, via soft-fork, opcodes de curva elíptica em novos tipos de output resistentes à computação quântica, com debate técnico girando em torno de incentivos de mineradores e reversibilidade da mudança.</li>
   <li><a href="https://starkware.co/blog/the-first-quantum-safe-bitcoin-transaction-has-been-mined/" target="_blank">Primeira transação com resistência pós-quântica minerada na mainnet do Bitcoin sem soft fork</a> - Em 27/08/2026, a StarkWare minerou a primeira transação com resistência pós-quântica na mainnet do Bitcoin, usando o método QSB de Avihu Levy — uma técnica de “signature grinding” que roda inteiramente dentro do Bitcoin Script existente sem exigir soft fork, mas que, por gerar um formato não padrão, precisou ser enviada diretamente a um minerador (via MARA Slipstream) em vez do mempool normal.</li>
   <li><a href="https://github.com/bitcoin/bitcoin/pull/34628" target="_blank">Bitcoin Core mescla novo rate-limiting global de transações (PR #34628)</a> - Anthony Towns teve mesclada uma mudança que substitui o rate-limiting por peer por um sistema global com um único backlog ordenado por taxa, controlado por dois limitadores (“token buckets”) — um por contagem e outro por tamanho serializado das transações —, mitigando um vetor de negação de serviço por CPU causado por reordenação repetida de transações.</li>
-  <li><a href="https://delvingbitcoin.org/t/bip-draft-segregated-data-a-prunable-script-isolated-block-region-for-data-carriage/2641" target="_blank">BIP draft: “Segregated Data” - tirar dado arbitrário do OP_RETURN</a> - Proposta de soft-fork para criar uma região de bloco prunável e isolada de script dedicada a dados arbitrários, tirando esse uso do OP_RETURN e reacendendo a discussão sobre o que a chain deveria guardar — críticos apontam que, sem incentivo de retenção obrigatória, os nós não têm motivo para de fato guardar esses dados.</li>
+  <li><a href="https://delvingbitcoin.org/t/bip-draft-segregated-data-a-prunable-script-isolated-block-region-for-data-carriage/2641" target="_blank">BIP draft: “Segregated Data” — tirar dado arbitrário do OP_RETURN</a> - Proposta de soft-fork para criar uma região de bloco prunável e isolada de script dedicada a dados arbitrários, tirando esse uso do OP_RETURN e reacendendo a discussão sobre o que a chain deveria guardar — críticos apontam que, sem incentivo de retenção obrigatória, os nós não têm motivo para de fato guardar esses dados.</li>
   <li><a href="https://github.com/bitcoin-core/secp256k1/releases/tag/v0.8.0" target="_blank">libsecp256k1 v0.8.0</a> - Nova release da biblioteca criptográfica usada pelo Bitcoin Core traz um módulo para silent payments (BIP352) e um novo ponto de extensão para plugar implementações de SHA-256 otimizadas por hardware, além de melhorias no elemento de campo de 64 bits que renderam ganho reportado de até ~11% na verificação de assinaturas ECDSA e Schnorr.</li>
   <li><a href="https://livecoins.com.br/bitcoin-core-se-prepara-para-encerrar-desenvolvimento-de-ferramenta-que-oferece-suporte-para-carteiras-de-hardware/" target="_blank">Bitcoin Core encerra desenvolvimento do HWI (Python) e comunidade migra para o BHWI (Rust)</a> - A desenvolvedora Ava Chow (<code class="language-plaintext highlighter-rouge">achow101</code>) anunciou o fim do desenvolvimento ativo da Hardware Wallet Interface (HWI) em Python — que entra em manutenção mínima após o suporte a MuSig2, por limitações da linguagem para builds determinísticos —, com a comunidade migrando os esforços para o <strong>BHWI</strong> (Rust), que já suporta Coldcard, Jade, Ledger e BitBox02.</li>
 </ul>
@@ -161,10 +161,10 @@
       <a href="/pr-preview/pr-42/feed.xml">RSS Feed</a>
     </div>
   </div>
-  <!-- build: 475a19f · 2026-08-30T15:55:49Z · pipeline=actions-preview -->
+  <!-- build: 19f7f17 · 2026-08-30T16:06:32Z · pipeline=actions-preview -->
   <div class="Footer-build" id="footer-build-info" hidden>
-    build <code>475a19f</code> ·
-    2026-08-30T15:55:49Z ·
+    build <code>19f7f17</code> ·
+    2026-08-30T16:06:32Z ·
     actions-preview
   </div>
   <script>
