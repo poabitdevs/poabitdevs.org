@@ -76,3 +76,19 @@ frontmatter ficam no [`AGENTS.md`](AGENTS.md); aqui o foco é o processo.
 arquivo (`001`, `002`, ..., `016`, `017`, ...), independente de gaps de
 calendário entre edições. Verificar o maior número já usado em
 `_posts/` antes de abrir uma edição nova.
+
+## Hook local opcional contra push direto na master
+
+O repositório traz um hook `pre-push` versionado em `.githooks/` que
+bloqueia `git push` direto para `master`/`main` — alterações devem ir por
+branch + Pull Request. Ele é **opcional e local**: nada acontece até você
+ativá-lo, e mesmo ativado é possível contornar com `git push --no-verify`
+ou simplesmente não o ativando. Não substitui uma branch protection rule
+no GitHub (só quem tem admin no repositório pode configurar uma), mas
+ajuda a evitar o erro por descuido.
+
+Para ativar, uma vez por clone do repositório:
+
+```sh
+git config core.hooksPath .githooks
+```
