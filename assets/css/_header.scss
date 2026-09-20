@@ -22,6 +22,10 @@
     }
   }
 
+  &-logo-text {
+    white-space: nowrap;
+  }
+
   &-nav {
     display: flex;
     font-size: 1.3rem;
@@ -34,6 +38,7 @@
       color: #333;
       opacity: 0.4;
       margin-left: 1.5rem;
+      white-space: nowrap;
 
       &:hover {
         color: $primary-color;
