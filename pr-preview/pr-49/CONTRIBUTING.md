@@ -20,7 +20,7 @@ frontmatter ficam no [`AGENTS.md`](AGENTS.md); aqui o foco é o processo.
    > Deixe aqui a notícia (com link) que gostaria de incluir na pauta do
    > Bitdevs Porto Alegre do dia DD/MM/AA.
 
-   Em seguida, atualizar o link "Sugira uma pauta no Github" da home
+   Em seguida, atualizar o link "Sugira uma pauta no GitHub" da home
    (`index.html`) para a issue recém-aberta, em branch e PR próprios: o
    link é hardcoded e, sem essa troca, continua apontando para a issue da
    edição anterior, já fechada.
