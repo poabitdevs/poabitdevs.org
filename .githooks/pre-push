@@ -1,0 +1,18 @@
+#!/bin/sh
+# Bloqueia `git push` direto para master/main. Alterações devem ir por
+# branch + Pull Request. Guardrail só local — quem der `--no-verify` ou não
+# tiver o hook ativado (ver CONTRIBUTING.md) passa por cima dele; não
+# substitui uma branch protection rule no GitHub.
+
+protected='^refs/heads/(master|main)$'
+
+while read -r local_ref local_sha remote_ref remote_sha; do
+  branch=$(printf '%s' "$remote_ref" | sed -E 's#refs/heads/##')
+  if printf '%s' "$remote_ref" | grep -Eq "$protected"; then
+    echo "error: push direto para '$branch' bloqueado por hook local (pre-push)." >&2
+    echo "Crie uma branch e abra um Pull Request em vez de dar push direto para '$branch'." >&2
+    exit 1
+  fi
+done
+
+exit 0
