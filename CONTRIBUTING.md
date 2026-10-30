@@ -20,6 +20,11 @@ frontmatter ficam no [`AGENTS.md`](AGENTS.md); aqui o foco é o processo.
    > Deixe aqui a notícia (com link) que gostaria de incluir na pauta do
    > Bitdevs Porto Alegre do dia DD/MM/AA.
 
+   Em seguida, atualizar o link "Sugira uma pauta no GitHub" da home
+   (`index.html`) para a issue recém-aberta, em branch e PR próprios: o
+   link é hardcoded e, sem essa troca, continua apontando para a issue da
+   edição anterior, já fechada.
+
 3. **Comunidade comenta.** Cada sugestão vira um comentário na issue, em
    geral um link (Bitcoin Optech, newsletters, blogs, X/Twitter etc.), às
    vezes com uma linha de contexto.
@@ -59,16 +64,22 @@ frontmatter ficam no [`AGENTS.md`](AGENTS.md); aqui o foco é o processo.
    post recente em `_posts/` como referência de formato.
 
 6. **Abrir o PR.** Da branch `feat/add-post-<NNN>` para `master`, resumindo
-   no corpo os tópicos curados por categoria e fechando a issue de
-   sugestões (`Closes #<número-da-issue>`). Ver PR
-   [#18](https://github.com/poabitdevs/poabitdevs.org/pull/18) como
+   no corpo os tópicos curados por categoria e **referenciando** a issue de
+   sugestões sem fechá-la (`Refs: #<número-da-issue>`). Não usar `Closes`,
+   `Fixes` nem `Resolves`: a issue segue aberta recebendo sugestões até
+   pouco antes do evento, e a pauta pode receber desdobramentos nesse
+   intervalo. Ver PR
+   [#42](https://github.com/poabitdevs/poabitdevs.org/pull/42) como
    exemplo.
 
 7. **Merge.** Só depois que a pauta estiver fechada **e** o link real do
    evento na Luma estiver preenchido no frontmatter — nunca mergear com
-   um link placeholder. O merge fecha a issue automaticamente e publica o
-   post (Jekyll gera a página a partir de `_posts/`; `events.html` lista
-   qualquer post com `type: socratic` sem trabalho manual adicional).
+   um link placeholder. O merge publica o post (Jekyll gera a página a
+   partir de `_posts/`; `events.html` lista qualquer post com
+   `type: socratic` sem trabalho manual adicional), mas **não** encerra a
+   issue de sugestões: ela é fechada à mão depois do evento, com um
+   comentário encerrando o convite — ver
+   [#23](https://github.com/poabitdevs/poabitdevs.org/issues/23).
 
 ## Numeração dos posts
 
