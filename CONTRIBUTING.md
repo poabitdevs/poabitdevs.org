@@ -4,6 +4,8 @@ Este documento descreve o ciclo completo de criação de uma edição do
 Seminário Socrático do Porto Alegre BitDevs, do convite a sugestões de
 pauta até o post publicado no site. Convenções técnicas de build e de
 frontmatter ficam no [`AGENTS.md`](AGENTS.md); aqui o foco é o processo.
+Ao final, há também convenções do fluxo de Git do repositório (hook
+local contra push direto na `master`).
 
 ## Ciclo de uma edição
 
