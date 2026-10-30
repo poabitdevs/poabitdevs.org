@@ -49,6 +49,7 @@ docs/adr/     Registro de decisões arquiteturais
 .github/
   workflows/  Pipelines de CI/CD (build, preview, produção)
   scripts/    Scripts de apoio aos workflows, chamados por mais de um deles
+.githooks/    Hooks Git versionados e opcionais (ativação por clone, ver CONTRIBUTING.md)
 index.html    Página inicial
 events.html   Listagem de todas as edições do Seminário Socrático
 404.html      Página de erro 404
