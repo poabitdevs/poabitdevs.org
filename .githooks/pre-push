@@ -6,7 +6,7 @@
 
 protected='^refs/heads/(master|main)$'
 
-while read -r local_ref local_sha remote_ref remote_sha; do
+while read -r _ _ remote_ref _; do
   branch=$(printf '%s' "$remote_ref" | sed -E 's#refs/heads/##')
   if printf '%s' "$remote_ref" | grep -Eq "$protected"; then
     echo "error: push direto para '$branch' bloqueado por hook local (pre-push)." >&2
