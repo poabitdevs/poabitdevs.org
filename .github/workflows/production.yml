@@ -13,7 +13,7 @@ permissions:
 jobs:
   publish:
     name: publish-production
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     steps:
       # ref explícito (não github.sha): garante que o build usa o HEAD
       # atual de master no momento em que a Action roda, não o commit que
