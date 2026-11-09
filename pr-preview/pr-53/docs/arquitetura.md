@@ -155,6 +155,15 @@ completo de cada uma dessas escolhas (separação build/publish, grupos de
 `concurrency`, coalescência de merges, corridas entre publish e cleanup)
 está em [`docs/adr/0002-preview-e-producao-via-actions-gh-pages.md`](adr/0002-preview-e-producao-via-actions-gh-pages.md).
 
+Os quatro workflows rodam num runner de versão fixa (`runs-on:
+ubuntu-26.04`), não em `ubuntu-latest`. Quando o `ubuntu-latest` muda de
+imagem, o `ruby/setup-ruby` pode deixar de ter o binário da versão do
+`.ruby-version` e o build quebra sem nenhuma mudança no repositório — foi o
+que aconteceu na troca para o Ubuntu 26.04, em 08/11/2026, com o Ruby 3.0.2.
+Com a versão fixa, a troca de imagem vira um PR deliberado, que atualiza o
+`runs-on` dos quatro workflows e, se preciso, o `.ruby-version`, antes de a
+GitHub aposentar a imagem em uso.
+
 **Estado transitório:** a fonte do GitHub Pages ainda é o build legacy a
 partir de `master`, não a branch `gh-pages` — repontar isso exige acesso de
 admin do repositório, pendente (issue
