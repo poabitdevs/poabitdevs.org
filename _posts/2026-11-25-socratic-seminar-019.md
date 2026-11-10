@@ -7,7 +7,7 @@ luma: https://luma.com/n1gy6tyo
 
 ## Avisos
 
-- **Pauta provisória.** Data prevista: 25/11/2026 (a confirmar). Local: a confirmar. A pauta ainda pode mudar até a véspera do evento — deixe sua sugestão de notícia (com link) na [issue de sugestões de Novembro/2026](https://github.com/poabitdevs/poabitdevs.org/issues/51){:target="_blank"}.
+- **Data e local confirmados:** 25/11/2026, das 18h às 22h, no SENGE (Av. Érico Veríssimo, 960 – Menino Deus, Porto Alegre), Sala 42, 4º andar. A pauta ainda pode mudar até a véspera do evento — deixe sua sugestão de notícia (com link) na [issue de sugestões de Novembro/2026](https://github.com/poabitdevs/poabitdevs.org/issues/51){:target="_blank"}.
 - Respeite a privacidade dos participantes.
 - Os meetups nunca são gravados. Queremos todos à vontade para participar e discutir os assuntos programados, de forma anônima se assim o desejarem.
 - Entrem no grupo do Whatsapp "[BitdevsPOA](https://chat.whatsapp.com/I9OKdMexmXVBQMHEPb2Uyp){:target="_blank"}" para receberem novidades sobre o grupo e serem notificados dos próximos encontros!
@@ -15,7 +15,7 @@ luma: https://luma.com/n1gy6tyo
 
 ## Agradecimentos
 
-- Agradecemos à [Vinteum](https://vinteum.org){:target="_blank"} pelo apoio e à [GoBTC](https://gobtc.com.br){:target="_blank"} pela organização e divulgação do evento.
+- Agradecemos ao SENGE pela locação do espaço, à [Vinteum](https://vinteum.org){:target="_blank"} pelo apoio e à [GoBTC](https://gobtc.com.br){:target="_blank"} pela organização e divulgação do evento.
 
 ## Cronograma
 
