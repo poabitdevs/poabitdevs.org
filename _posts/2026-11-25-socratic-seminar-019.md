@@ -15,7 +15,7 @@ luma: https://luma.com/n1gy6tyo
 
 ## Agradecimentos
 
-- Agradecemos à [Vinteum](https://vinteum.org){:target="_blank"} pelo apoio e à [GoBTC](https://gobtc.com.br){:target="_blank"} pela organização e divulgação do evento.
+- Agradecemos ao SENGE pela locação do espaço, à [Vinteum](https://vinteum.org){:target="_blank"} pelo apoio e à [GoBTC](https://gobtc.com.br){:target="_blank"} pela organização e divulgação do evento.
 
 ## Cronograma
 
